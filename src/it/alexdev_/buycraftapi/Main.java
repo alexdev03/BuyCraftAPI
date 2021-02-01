@@ -1,7 +1,6 @@
-package it.alexdev_.buycraftapi.buycraftapi;
+package it.alexdev_.buycraftapi;
 
-import me.clip.placeholderapi.PlaceholderAPI;
-import me.clip.placeholderapi.events.PlaceholderHookUnloadEvent;
+import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.buycraft.plugin.bukkit.BuycraftPlugin;
 import net.buycraft.plugin.data.RecentPayment;
@@ -50,14 +49,35 @@ public class Main extends PlaceholderExpansion {
 
     @Override
     public boolean canRegister() {
-        plugin = (BuycraftPlugin) Bukkit.getServer().getPluginManager().getPlugin("BuycraftX");
-        vault = (Vault) Bukkit.getServer().getPluginManager().getPlugin("Vault");
 
         Plugin placeholderAPI = Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
 
+        int pluginId = 	10173;
+        Metrics metrics = new Metrics(placeholderAPI, pluginId);
+
+
+        if(metrics.isEnabled()) placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Successfully connected to bstats");
+        else placeholderAPI.getLogger().log(Level.WARNING, "[BuyCraftAPI] Could not connect to bstats! Enable it in bstats folder in plugins folder.");
+
+        metrics.addCustomChart(new Metrics.MultiLineChart("players_and_servers", () -> {
+            Map<String, Integer> valueMap = new HashMap<>();
+            valueMap.put("servers", 1);
+            valueMap.put("players", Bukkit.getOnlinePlayers().size());
+            return valueMap;
+        }));
+
+
+
+        plugin = (BuycraftPlugin) Bukkit.getServer().getPluginManager().getPlugin("BuycraftX");
+        vault = (Vault) Bukkit.getServer().getPluginManager().getPlugin("Vault");
+
+
+
+        PlaceholderAPIPlugin placeholderAPI1 = (PlaceholderAPIPlugin) placeholderAPI;
+
         if (!loadPayments() || recentPayments.size() == 0) {
             System.out.println("[PlaceholderAPI] [BuyCraftAPI] Could not load expansion. There are no payments yet.");
-            PlaceholderAPI.unregisterExpansion(this);
+            unregister();
             return false;
         }
         countPayments();
@@ -66,7 +86,8 @@ public class Main extends PlaceholderExpansion {
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    if (PlaceholderAPI.getExpansions().contains(placeholderExpansion)) loadPayments();
+
+                    if (placeholderAPI1.getLocalExpansionManager().getExpansions().contains(placeholderExpansion)) loadPayments();
                     else {
                         placeholderAPI.getLogger().log(Level.INFO, "Task loadPayments cancelled");
                         cancel();
@@ -76,7 +97,7 @@ public class Main extends PlaceholderExpansion {
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    if (PlaceholderAPI.getExpansions().contains(placeholderExpansion)) savePaymentsInFile();
+                    if (placeholderAPI1.getLocalExpansionManager().getExpansions().contains(placeholderExpansion)) savePaymentsInFile();
                     else {
                         placeholderAPI.getLogger().log(Level.INFO, "Task savePaymentsInFile cancelled");
                         cancel();
@@ -87,7 +108,7 @@ public class Main extends PlaceholderExpansion {
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    if (PlaceholderAPI.getExpansions().contains(placeholderExpansion)) calcTot();
+                    if (placeholderAPI1.getLocalExpansionManager().getExpansions().contains(placeholderExpansion)) calcTot();
                     else {
                         placeholderAPI.getLogger().log(Level.INFO, "Task calcTot cancelled");
                         cancel();
@@ -98,7 +119,7 @@ public class Main extends PlaceholderExpansion {
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    if (PlaceholderAPI.getExpansions().contains(placeholderExpansion)) calcMonthly();
+                    if (placeholderAPI1.getLocalExpansionManager().getExpansions().contains(placeholderExpansion)) calcMonthly();
                     else {
                         placeholderAPI.getLogger().log(Level.INFO, "Task calcMonthly cancelled");
                         cancel();
@@ -407,7 +428,7 @@ public class Main extends PlaceholderExpansion {
 
     @Override
     public String getVersion() {
-        return "2.0";
+        return "2.2";
     }
 
 
