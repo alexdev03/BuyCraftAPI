@@ -9,20 +9,14 @@ import net.milkbowl.vault.Vault;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -30,25 +24,43 @@ import java.util.logging.Level;
 public class Main extends PlaceholderExpansion {
 
     private static Call<List<RecentPayment>> recentPaymentsCall;
-    private static List<RecentPayment> recentPayments = null;
+    public static List<RecentPayment> recentPayments = null;
     private BuycraftPlugin plugin;
     private int maxPayments = 100;
     private static boolean times = true;
     private Vault vault;
     private static Permission perms = null;
 
-    private final File folder = new File("plugins/PlaceholderAPI/expansions/BuyCraftAPI");
-    private final File dataFolder = new File("plugins/PlaceholderAPI/expansions/BuyCraftAPI/Data");
-    private final File config = new File("plugins/PlaceholderAPI/expansions/BuyCraftAPI/config.yml");
-    private final FileConfiguration fileConfiguration = YamlConfiguration.loadConfiguration(config);
+    private FileManager fileManager;
 
-    private String defaultCurrency = "EUR";
+
+
+
 
     private final PlaceholderExpansion placeholderExpansion = this;
 
 
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "AlexDev_";
+    }
+
+    @Override
+    public @NotNull String getIdentifier() {
+        return "buycraftAPI";
+    }
+
+
+    @Override
+    public @NotNull String getVersion() {
+        return "2.3";
+    }
+
+
     @Override
     public boolean canRegister() {
+        fileManager = new FileManager();
 
         Plugin placeholderAPI = Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
 
@@ -76,7 +88,7 @@ public class Main extends PlaceholderExpansion {
         PlaceholderAPIPlugin placeholderAPI1 = (PlaceholderAPIPlugin) placeholderAPI;
 
         if (!loadPayments() || recentPayments.size() == 0) {
-            System.out.println("[PlaceholderAPI] [BuyCraftAPI] Could not load expansion. There are no payments yet.");
+            placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Could not load expansion. There are no payments yet.");
             unregister();
             return false;
         }
@@ -97,7 +109,7 @@ public class Main extends PlaceholderExpansion {
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    if (placeholderAPI1.getLocalExpansionManager().getExpansions().contains(placeholderExpansion)) savePaymentsInFile();
+                    if (placeholderAPI1.getLocalExpansionManager().getExpansions().contains(placeholderExpansion)) fileManager.savePaymentsInFile();
                     else {
                         placeholderAPI.getLogger().log(Level.INFO, "Task savePaymentsInFile cancelled");
                         cancel();
@@ -108,7 +120,7 @@ public class Main extends PlaceholderExpansion {
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    if (placeholderAPI1.getLocalExpansionManager().getExpansions().contains(placeholderExpansion)) calcTot();
+                    if (placeholderAPI1.getLocalExpansionManager().getExpansions().contains(placeholderExpansion)) fileManager.calcTot();
                     else {
                         placeholderAPI.getLogger().log(Level.INFO, "Task calcTot cancelled");
                         cancel();
@@ -119,7 +131,7 @@ public class Main extends PlaceholderExpansion {
             new BukkitRunnable() {
                 @Override
                 public void run() {
-                    if (placeholderAPI1.getLocalExpansionManager().getExpansions().contains(placeholderExpansion)) calcMonthly();
+                    if (placeholderAPI1.getLocalExpansionManager().getExpansions().contains(placeholderExpansion)) fileManager.calcMonthly();
                     else {
                         placeholderAPI.getLogger().log(Level.INFO, "Task calcMonthly cancelled");
                         cancel();
@@ -133,225 +145,24 @@ public class Main extends PlaceholderExpansion {
         if (plugin == null) return false;
         if (vault != null) {
             if (setupPermissions()) {
-                System.out.println("[PlaceholderAPI] Successfully hooked into Vault for BuyCraftAPI v" + getVersion());
+                placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Successfully hooked into Vault for BuyCraftAPI v" + getVersion());
             }
         }
         return true;
     }
 
-    public void savePaymentsInFile() {
-        if (!folder.exists()) folder.mkdir();
-        if (!dataFolder.exists()) dataFolder.mkdir();
-        for (RecentPayment recentPayment : recentPayments) {
-            try {
-
-
-                if (recentPayment.getPlayer().getUuid().contains("00000000000000000000")) continue;
-                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(recentPayment.getPlayer().getName());
-                if (!offlinePlayer.hasPlayedBefore()) continue;
-                File player = new File("plugins/PlaceholderAPI/expansions/BuyCraftAPI/Data/" + Bukkit.getOfflinePlayer(recentPayment.getPlayer().getName()).getUniqueId().toString() + ".yml");
-                if (!player.exists()) {
-                    try {
-                        player.createNewFile();
-                    } catch (IOException e) {
-                        //e.printStackTrace();
-                        System.out.println("Errore nel creare il file");
-                    }
-                    FileConfiguration fileConfiguration = new YamlConfiguration();
-                    try {
-                        fileConfiguration.load(player);
-                    } catch (IOException | InvalidConfigurationException e) {
-                        e.printStackTrace();
-                    }
-                    fileConfiguration.createSection("Data");
-                    fileConfiguration.set("Data.Player", recentPayment.getPlayer().getName());
-                    fileConfiguration.createSection("Data.Payments");
-                    fileConfiguration.createSection("Data.Payments." + recentPayment.getDate().toString());
-                    fileConfiguration.set("Data.Payments." + recentPayment.getDate().toString() + ".Amount", recentPayment.getAmount().doubleValue());
-                /*if(!recentPayment.getCurrency().getIso4217().contains("net.buycraft")) {
-                    fileConfiguration.set("Data.Payments." + recentPayment.getDate().toString() + ".Currency", recentPayment.getCurrency().getIso4217());
-                }else {
-                    fileConfiguration.set("Data.Payments."+recentPayment.getDate().toString()+".Currency", defaultCurrency);
-                }*/
-                    fileConfiguration.set("Data.Payments." + recentPayment.getDate().toString() + ".Currency", defaultCurrency);
-                    save(fileConfiguration, player);
-                } else {
-                    FileConfiguration fileConfiguration = new YamlConfiguration();
-                    try {
-                        fileConfiguration.load(player);
-                    } catch (IOException | InvalidConfigurationException e) {
-                        e.printStackTrace();
-                    }
-                    if (fileConfiguration.isConfigurationSection("Data.Payments." + recentPayment.getDate().toString()))
-                        continue;
-                    fileConfiguration.createSection("Data.Payments." + recentPayment.getDate().toString());
-                    fileConfiguration.set("Data.Payments." + recentPayment.getDate().toString() + ".Amount", recentPayment.getAmount().doubleValue());
-                /*if(!recentPayment.getCurrency().getIso4217().contains("net.buycraft")) {
-                    fileConfiguration.set("Data.Payments." + recentPayment.getDate().toString() + ".Currency", recentPayment.getCurrency().getIso4217());
-                }else {
-                    fileConfiguration.set("Data.Payments."+recentPayment.getDate().toString()+".Currency", defaultCurrency);
-                }*/
-                    fileConfiguration.set("Data.Payments." + recentPayment.getDate().toString() + ".Currency", defaultCurrency);
-
-                    save(fileConfiguration, player);
-                }
-            } catch (IllegalArgumentException e) {
-            }
-        }
-    }
-
-    public void save(FileConfiguration fileConfiguration, File file) {
-        try {
-            fileConfiguration.save(file);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void calcTot() {
-        HashMap<String, Double> value = new HashMap<>();
-        for (File player : dataFolder.listFiles()) {
-            double count = 0D;
-            FileConfiguration fileConfiguration = new YamlConfiguration();
-            try {
-                fileConfiguration.load(player);
-            } catch (IOException | InvalidConfigurationException e) {
-                e.printStackTrace();
-            }
-
-            for (String payment : fileConfiguration.getConfigurationSection("Data.Payments").getKeys(false)) {
-                count += fileConfiguration.getDouble("Data.Payments." + payment + ".Amount");
-
-            }
-            value.put(player.getName().replace(".yml", ""), count);
-        }
-        List<Double> toSort = new ArrayList<>(value.values());
-
-
-        Collections.sort(toSort);
-
-        Collections.reverse(toSort);
-
-
-
-
-        if (!config.exists()) {
-            try {
-                config.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-
-
-        if (!fileConfiguration.isConfigurationSection("DefaultCurrency")) fileConfiguration.set("DefaultCurrency", "EUR");
-        defaultCurrency = fileConfiguration.getString("DefaultCurrency");
-
-        fileConfiguration.set("Global", null);
-        fileConfiguration.createSection("Global");
-
-        int position = 1;
-
-
-        for (Double data : toSort) {
-            for (String player : value.keySet()) {
-                if (value.get(player).equals(data) && data > 0) {
-                    fileConfiguration.createSection("Global." + position);
-                    fileConfiguration.set("Global." + position + ".UUID", player);
-                    fileConfiguration.set("Global." + position + ".Name", Bukkit.getOfflinePlayer(UUID.fromString(player)).getName());
-                    fileConfiguration.set("Global." + position + ".Value", data);
-                    position++;
-                }
-            }
-        }
-        save(fileConfiguration, config);
-    }
-
-
-    public void calcMonthly() {
-        HashMap<String, Double> value = new HashMap<>();
-        for (File player : dataFolder.listFiles()) {
-            double count = 0D;
-            FileConfiguration fileConfiguration = new YamlConfiguration();
-            try {
-                fileConfiguration.load(player);
-            } catch (IOException | InvalidConfigurationException e) {
-                e.printStackTrace();
-            }
-
-            for (String payment : fileConfiguration.getConfigurationSection("Data.Payments").getKeys(false)) {
-                SimpleDateFormat format = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
-                Date date = null;
-                try {
-                    date = format.parse(payment);
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                Date now = new Date(System.currentTimeMillis());
-                Date monthago = new Date(System.currentTimeMillis());
-                monthago.setMonth(monthago.getMonth() - 1);
-                if (isBetween(monthago, now, date))
-                    count += fileConfiguration.getDouble("Data.Payments." + payment + ".Amount");
-            }
-            value.put(player.getName().replace(".yml", ""), count);
-        }
-
-        List<Double> toSort = new ArrayList<>(value.values());
-
-
-        Collections.sort(toSort);
-
-        Collections.reverse(toSort);
-
-
-        if (!config.exists()) {
-            try {
-                config.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-
-
-        if (!fileConfiguration.isConfigurationSection("DefaultCurrency"))
-            fileConfiguration.set("DefaultCurrency", "EUR");
-        defaultCurrency = fileConfiguration.getString("DefaultCurrency");
-
-        fileConfiguration.set("Monthly", null);
-        fileConfiguration.createSection("Monthly");
-
-        int position = 1;
-
-
-        for (Double data : toSort) {
-            for (String player : value.keySet()) {
-                if (value.get(player).equals(data) && data > 0) {
-                    fileConfiguration.createSection("Monthly." + position);
-                    fileConfiguration.set("Monthly." + position + ".UUID", player);
-                    fileConfiguration.set("Monthly." + position + ".Name", Bukkit.getOfflinePlayer(UUID.fromString(player)).getName());
-                    fileConfiguration.set("Monthly." + position + ".Value", data);
-                    position++;
-                }
-            }
-        }
-        save(fileConfiguration, config);
-    }
-
-
     public String getPlayerFromTop(String top, int position) {
         switch (top) {
             case "Global": {
-                if (fileConfiguration.isConfigurationSection("Global." + position)) {
-                    return fileConfiguration.getString("Global." + position + ".Name");
+                if (fileManager.getFileConfiguration().isConfigurationSection("Global." + position)) {
+                    return fileManager.getFileConfiguration().getString("Global." + position + ".Name");
                 } else {
                     return null;
                 }
             }
             case "Monthly": {
-                if (fileConfiguration.isConfigurationSection("Monthly." + position)) {
-                    return fileConfiguration.getString("Monthly." + position + ".Name");
+                if (fileManager.getFileConfiguration().isConfigurationSection("Monthly." + position)) {
+                    return fileManager.getFileConfiguration().getString("Monthly." + position + ".Name");
                 } else {
                     return null;
                 }
@@ -361,22 +172,20 @@ public class Main extends PlaceholderExpansion {
         }
     }
 
-    public boolean isBetween(Date a, Date b, Date d) {
-        return a.compareTo(d) * d.compareTo(b) > 0;
-    }
+
 
     public double getValueFromTop(String top, int position) {
         switch (top) {
             case "Global": {
-                if (fileConfiguration.isConfigurationSection("Global." + position)) {
-                    return fileConfiguration.getDouble("Global." + position + ".Value");
+                if (fileManager.getFileConfiguration().isConfigurationSection("Global." + position)) {
+                    return fileManager.getFileConfiguration().getDouble("Global." + position + ".Value");
                 } else {
                     return -1;
                 }
             }
             case "Monthly": {
-                if (fileConfiguration.isConfigurationSection("Monthly." + position)) {
-                    return fileConfiguration.getDouble("Monthly." + position + ".Value");
+                if (fileManager.getFileConfiguration().isConfigurationSection("Monthly." + position)) {
+                    return fileManager.getFileConfiguration().getDouble("Monthly." + position + ".Value");
                 } else {
                     return -1;
                 }
@@ -390,14 +199,14 @@ public class Main extends PlaceholderExpansion {
         double amount = 0D;
         switch (type){
             case "Global":{
-                for(String id : fileConfiguration.getConfigurationSection("Global").getKeys(false)){
-                    amount += fileConfiguration.getDouble("Global." + id + ".Value");
+                for(String id : fileManager.getFileConfiguration().getConfigurationSection("Global").getKeys(false)){
+                    amount += fileManager.getFileConfiguration().getDouble("Global." + id + ".Value");
                 }
                 break;
             }
             case "Monthly":{
-                for(String id : fileConfiguration.getConfigurationSection("Monthly").getKeys(false)){
-                    amount += fileConfiguration.getDouble("Monthly." + id + ".Value");
+                for(String id : fileManager.getFileConfiguration().getConfigurationSection("Monthly").getKeys(false)){
+                    amount += fileManager.getFileConfiguration().getDouble("Monthly." + id + ".Value");
                 }
                 break;
             }
@@ -415,21 +224,6 @@ public class Main extends PlaceholderExpansion {
     }
 
 
-    @Override
-    public String getAuthor() {
-        return "AlexDev_";
-    }
-
-    @Override
-    public String getIdentifier() {
-        return "buycraftAPI";
-    }
-
-
-    @Override
-    public String getVersion() {
-        return "2.2";
-    }
 
 
     @Override
@@ -582,11 +376,11 @@ public class Main extends PlaceholderExpansion {
 
 
         if (identifier.contains("top_donor_global_currency_")) {
-            return defaultCurrency;
+            return fileManager.getDefaultCurrency();
         }
 
         if (identifier.contains("top_donor_monthly_currency_")) {
-            return defaultCurrency;
+            return fileManager.getDefaultCurrency();
         }
 
         if (identifier.equalsIgnoreCase("info")) {
@@ -726,9 +520,9 @@ public class Main extends PlaceholderExpansion {
     }
 
     public boolean checkNumExeption(String num) {
-        int number = 0;
+
         try {
-            number = Integer.parseInt(num);
+            Integer.parseInt(num);
             return true;
         } catch (NumberFormatException e) {
             return false;
