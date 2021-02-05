@@ -24,7 +24,8 @@ public class PaymentsManager {
         try {
             recentPaymentsCall = plugin.getApiClient().getRecentPayments(maxPayments);
             Main.recentPayments = recentPaymentsCall.execute().body();
-            if (Main.recentPayments.size() < maxPayments) maxPayments = Main.recentPayments.size();
+            if (Main.recentPayments != null && Main.recentPayments.size() < maxPayments)
+                maxPayments = Main.recentPayments.size();
         } catch (Exception e) {
             return false;
         }

@@ -24,7 +24,7 @@ public class Tasks {
             @Override
             public void run() {
 
-                if (papi.getLocalExpansionManager().getExpansions().contains(Main.getInstance().getPlaceholdersInstance())) Main.getInstance().paymentsManager.loadPayments();
+                if (papi.getLocalExpansionManager().getExpansions().contains(Main.getInstance())) Main.getInstance().paymentsManager.loadPayments();
                 else {
                     placeholderapi.getLogger().log(Level.INFO, "Task loadPayments cancelled");
                     cancel();
@@ -37,7 +37,7 @@ public class Tasks {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (papi.getLocalExpansionManager().getExpansions().contains(Main.getInstance().getPlaceholdersInstance())) Main.getInstance().fileManager.savePaymentsInFile();
+                if (papi.getLocalExpansionManager().getExpansions().contains(Main.getInstance())) Main.getInstance().fileManager.savePaymentsInFile();
                 else {
                     placeholderapi.getLogger().log(Level.INFO, "Task savePaymentsInFile cancelled");
                     cancel();
@@ -50,7 +50,7 @@ public class Tasks {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (papi.getLocalExpansionManager().getExpansions().contains(Main.getInstance().getPlaceholdersInstance())) Main.getInstance().fileManager.calcTot();
+                if (papi.getLocalExpansionManager().getExpansions().contains(Main.getInstance())) Main.getInstance().fileManager.calcTot();
                 else {
                     placeholderapi.getLogger().log(Level.INFO, "Task calcTot cancelled");
                     cancel();
@@ -63,7 +63,7 @@ public class Tasks {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (papi.getLocalExpansionManager().getExpansions().contains(Main.getInstance().getPlaceholdersInstance())) Main.getInstance().fileManager.calcMonthly();
+                if (papi.getLocalExpansionManager().getExpansions().contains(Main.getInstance())) Main.getInstance().fileManager.calcMonthly();
                 else {
                     placeholderapi.getLogger().log(Level.INFO, "Task calcMonthly cancelled");
                     cancel();
