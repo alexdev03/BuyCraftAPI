@@ -1,5 +1,7 @@
-package it.alexdev_.buycraftapi;
+package it.alexdev_.buycraftapi.Payments;
 
+import it.alexdev_.buycraftapi.FileManager.FileManager;
+import it.alexdev_.buycraftapi.Main;
 import net.buycraft.plugin.data.RecentPayment;
 
 import java.math.BigDecimal;

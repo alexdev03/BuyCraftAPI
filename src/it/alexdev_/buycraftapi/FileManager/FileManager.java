@@ -1,5 +1,6 @@
-package it.alexdev_.buycraftapi;
+package it.alexdev_.buycraftapi.FileManager;
 
+import it.alexdev_.buycraftapi.Main;
 import net.buycraft.plugin.data.RecentPayment;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;

@@ -1,5 +1,8 @@
-package it.alexdev_.buycraftapi;
+package it.alexdev_.buycraftapi.Placeholders;
 
+import it.alexdev_.buycraftapi.FileManager.FileManager;
+import it.alexdev_.buycraftapi.Main;
+import it.alexdev_.buycraftapi.Payments.Query;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;

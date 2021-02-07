@@ -1,5 +1,6 @@
-package it.alexdev_.buycraftapi;
+package it.alexdev_.buycraftapi.Payments;
 
+import it.alexdev_.buycraftapi.Main;
 import net.buycraft.plugin.bukkit.BuycraftPlugin;
 import net.buycraft.plugin.data.RecentPayment;
 import net.buycraft.plugin.internal.retrofit2.Call;

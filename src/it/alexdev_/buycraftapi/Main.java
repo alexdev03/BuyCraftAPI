@@ -1,5 +1,11 @@
 package it.alexdev_.buycraftapi;
 
+import it.alexdev_.buycraftapi.FileManager.FileManager;
+import it.alexdev_.buycraftapi.Metrics.Metrics;
+import it.alexdev_.buycraftapi.Payments.PaymentsManager;
+import it.alexdev_.buycraftapi.Payments.Query;
+import it.alexdev_.buycraftapi.Placeholders.Placeholders;
+import it.alexdev_.buycraftapi.Tasks.Tasks;
 import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.buycraft.plugin.data.RecentPayment;
@@ -123,7 +129,7 @@ public class Main extends PlaceholderExpansion {
 
 
     public @NotNull String getVersion() {
-        return "2.4";
+        return "2.5";
     }
 
     @Override

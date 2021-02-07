@@ -1,5 +1,6 @@
-package it.alexdev_.buycraftapi;
+package it.alexdev_.buycraftapi.Tasks;
 
+import it.alexdev_.buycraftapi.Main;
 import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
