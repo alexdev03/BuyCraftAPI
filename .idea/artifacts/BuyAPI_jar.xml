@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="BuyAPI:jar">
-    <output-path>$PROJECT_DIR$/../Plugins/server test/tempplugin</output-path>
-    <root id="archive" name="BuyAPI.jar">
-      <element id="module-output" name="BuyAPI" />
-    </root>
-  </artifact>
-</component>

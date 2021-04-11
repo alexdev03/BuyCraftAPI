@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Vault1">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../Plugins/server test/tempplugin/Vault.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
