@@ -1,22 +1,27 @@
-package it.alexdev_.buycraftapi;
+package alexdev_.buycraftapi;
 
-import it.alexdev_.buycraftapi.FileManager.FileManager;
-import it.alexdev_.buycraftapi.Metrics.Metrics;
-import it.alexdev_.buycraftapi.Payments.PaymentsManager;
-import it.alexdev_.buycraftapi.Payments.Query;
-import it.alexdev_.buycraftapi.Placeholders.Placeholders;
-import it.alexdev_.buycraftapi.Tasks.Tasks;
+import alexdev_.buycraftapi.FileManager.FileManager;
+import alexdev_.buycraftapi.Metrics.Metrics;
+import alexdev_.buycraftapi.Payments.PaymentsManager;
+import alexdev_.buycraftapi.Payments.Query;
+import alexdev_.buycraftapi.Placeholders.Placeholders;
+import alexdev_.buycraftapi.Tasks.Tasks;
 import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.buycraft.plugin.data.RecentPayment;
 import net.milkbowl.vault.Vault;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,9 +42,7 @@ public class Main extends PlaceholderExpansion {
     public PaymentsManager paymentsManager;
     private static Main main;
     private Placeholders placeholders;
-
-
-
+    public boolean useUUID = false;
 
 
     public static Main getInstance() {
@@ -50,14 +53,9 @@ public class Main extends PlaceholderExpansion {
         return fileManager;
     }
 
-    public Placeholders getPlaceholdersInstance() {
-        return placeholders;
-    }
-
     @Override
-    public boolean canRegister(){
+    public boolean canRegister() {
         main = this;
-
         fileManager = new FileManager();
         Query query = new Query(fileManager);
         paymentsManager = new PaymentsManager(100);
@@ -66,12 +64,14 @@ public class Main extends PlaceholderExpansion {
 
         Plugin placeholderAPI = Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
 
-        int pluginId = 	10173;
+        int pluginId = 10173;
         Metrics metrics = new Metrics(placeholderAPI, pluginId);
 
 
-        if(metrics.isEnabled()) placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Successfully connected to bstats");
-        else placeholderAPI.getLogger().log(Level.WARNING, "[BuyCraftAPI] Could not connect to bstats! Enable it in bstats folder in plugins folder.");
+        if (metrics.isEnabled())
+            placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Successfully connected to bstats");
+        else
+            placeholderAPI.getLogger().log(Level.WARNING, "[BuyCraftAPI] Could not connect to bstats! Enable it in bstats folder in plugins folder.");
 
         metrics.addCustomChart(new Metrics.MultiLineChart("players_and_servers", () -> {
             HashMap<String, Integer> valueMap = new HashMap<>();
@@ -81,6 +81,33 @@ public class Main extends PlaceholderExpansion {
         }));
 
 
+        File file = new File("plugins/PlaceholderAPI/expansions/BuyCraftAPI/config.yml");
+        if(!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        FileConfiguration config = YamlConfiguration.loadConfiguration(file);
+
+        if (!config.isConfigurationSection("UseUUIDS")) {
+            config.set("UseUUIDS", true);
+            try {
+                config.save(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            useUUID = config.getBoolean("UseUUIDS");
+        }catch (NullPointerException e){
+            useUUID = true;
+        }
+
+        if(useUUID) placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Using UUIDS for payments");
+        else placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Using Players Names for payments");
 
         vault = (Vault) Bukkit.getServer().getPluginManager().getPlugin("Vault");
         PlaceholderAPIPlugin placeholderAPI1 = (PlaceholderAPIPlugin) placeholderAPI;
@@ -89,35 +116,45 @@ public class Main extends PlaceholderExpansion {
 
 
 
-        //Placeholders class
         placeholders = new Placeholders(query);
 
 
+        List<Integer> tasksId = new ArrayList<>();
 
 
-
-
-        paymentsManager.loadPayments();
         if (!paymentsManager.loadPayments() || recentPayments.size() == 0) {
-            placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Could not load expansion. There are no payments yet.");
+            placeholderAPI.getLogger().log(Level.SEVERE, "[BuyCraftAPI] Could not load expansion. There are no payments yet.");
             unregister();
             return false;
         } else {
-
             Tasks tasks = new Tasks(placeholderAPI);
             countPayments();
-            tasks.loadPaymentsTask();
-            tasks.loadCalcTotTask();
-            tasks.loadCalcMontlhyTask();
-            tasks.loadSavePaymentsTask();
+            placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Loading tasks");
+            tasksId.add(tasks.loadPaymentsTask());
+            tasksId.add(tasks.loadCalcTotTask());
+            tasksId.add(tasks.loadCalcMontlhyTask());
+            tasksId.add(tasks.loadSavePaymentsTask());
+            tasksId.add(tasks.loadCalcCurrentMonthTask());
         }
 
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!placeholderAPI1.getLocalExpansionManager().getExpansions().contains(main)) {
+                    for (Integer task : tasksId) {
+                        Bukkit.getScheduler().cancelTask(task);
+                    }
+                    cancel();
+                }
+            }
+        }.runTaskTimer(placeholderAPI1, 1, 20);
 
 
         return true;
     }
 
-    public @NotNull String getAuthor() {
+    public @NotNull
+    String getAuthor() {
         return "AlexDev_";
     }
 
@@ -127,17 +164,16 @@ public class Main extends PlaceholderExpansion {
     }
 
 
-
     public @NotNull String getVersion() {
-        return "2.5";
+        return "2.8";
     }
 
     @Override
-    public String onPlaceholderRequest(Player p, @NotNull String identifier) {
+    public String onPlaceholderRequest(Player p, String identifier) {
         return placeholders.onPlaceholderRequest(p, identifier);
     }
 
-    private void  vaultHook(PlaceholderAPIPlugin placeholderAPI){
+    private void vaultHook(PlaceholderAPIPlugin placeholderAPI) {
         if (vault != null) {
             if (setupPermissions()) {
                 placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Successfully hooked into Vault for BuyCraftAPI v" + getVersion());
@@ -156,23 +192,12 @@ public class Main extends PlaceholderExpansion {
     }
 
 
-
-
-
-
-
-
-
     public void countPayments() {
         if (recentPayments == null) {
             paymentsManager.loadPayments();
         }
         maxPayments = recentPayments.size();
     }
-
-
-
-
 
 
 }

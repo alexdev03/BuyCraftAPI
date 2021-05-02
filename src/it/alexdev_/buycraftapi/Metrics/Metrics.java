@@ -1,4 +1,4 @@
-package it.alexdev_.buycraftapi.Metrics;
+package alexdev_.buycraftapi.Metrics;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;

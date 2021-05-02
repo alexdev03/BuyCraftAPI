@@ -1,8 +1,8 @@
-package it.alexdev_.buycraftapi.Placeholders;
+package alexdev_.buycraftapi.Placeholders;
 
-import it.alexdev_.buycraftapi.FileManager.FileManager;
-import it.alexdev_.buycraftapi.Main;
-import it.alexdev_.buycraftapi.Payments.Query;
+import alexdev_.buycraftapi.FileManager.FileManager;
+import alexdev_.buycraftapi.Main;
+import alexdev_.buycraftapi.Payments.Query;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -28,6 +28,12 @@ public class Placeholders {
 
     @SuppressWarnings("deprecation")
     public String onPlaceholderRequest(Player p, @NotNull String identifier) {
+
+        if(identifier.equalsIgnoreCase("value_from_name")){
+            if(p==null) return "Player is Offline";
+            String value = query.getPlayerTotal(p.getName());
+            return  value!=null ? value : "0" ;
+        }
 
 
         if (identifier.contains("vault_recent_name_")) {
@@ -102,11 +108,24 @@ public class Placeholders {
                 return Main.perms.getPrimaryGroup(null, offlinePlayer);
             }
         }
+
         if (identifier.contains("vault_top_donor_monthly_name_")) {
             String replace = identifier.replace("vault_top_donor_monthly_name_", "");
             if (query.checkNumExeption(replace)) return "Error, Invalid number";
             int num = Integer.parseInt(replace);
             String player = query.getPlayerFromTop("Monthly", num);
+            if (player == null) return "Error";
+            else {
+                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
+                return Main.perms.getPrimaryGroup(null, offlinePlayer);
+            }
+        }
+
+        if (identifier.contains("vault_top_donor_current_month_name_")) {
+            String replace = identifier.replace("vault_top_donor_current_month_name_", "");
+            if (query.checkNumExeption(replace)) return "Error, Invalid number";
+            int num = Integer.parseInt(replace);
+            String player = query.getPlayerFromTop("CurrentMonth", num);
             if (player == null) return "Error";
             else {
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
@@ -136,6 +155,17 @@ public class Placeholders {
             }
         }
 
+        if (identifier.contains("top_donor_current_month_name_")) {
+            String replace = identifier.replace("top_donor_current_month_name_", "");
+            if (query.checkNumExeption(replace)) return "Error, Invalid number";
+            int num = Integer.parseInt(replace);
+            String player = query.getPlayerFromTop("CurrentMonth", num);
+            if (player == null) return "Error";
+            else {
+                return player;
+            }
+        }
+
         if (identifier.contains("top_donor_global_price_")) {
             String replace = identifier.replace("top_donor_global_price_", "");
             if (query.checkNumExeption(replace)) return "Error, Invalid number";
@@ -143,7 +173,7 @@ public class Placeholders {
             double player = query.getValueFromTop("Global", num);
             if (player == -1) return "Error";
             else {
-                return player + "";
+                return String.format( "%.2f", player );
             }
         }
 
@@ -154,7 +184,18 @@ public class Placeholders {
             double player = query.getValueFromTop("Monthly", num);
             if (player == -1) return "Error";
             else {
-                return player + "";
+                return String.format( "%.2f", player);
+            }
+        }
+
+        if (identifier.contains("top_donor_current_month_price_")) {
+            String replace = identifier.replace("top_donor_current_month_price_", "");
+            if (query.checkNumExeption(replace)) return "Error, Invalid number";
+            int num = Integer.parseInt(replace);
+            double player = query.getValueFromTop("CurrentMonth", num);
+            if (player == -1) return "Error";
+            else {
+                return String.format( "%.2f", player);
             }
         }
 
@@ -162,7 +203,7 @@ public class Placeholders {
             double data = query.getAllMoneySpent("Global");
             if (data == -1) return "Error";
             else {
-                return data + "";
+                return String.format( "%.2f", data );
             }
         }
 
@@ -170,7 +211,15 @@ public class Placeholders {
             double data = query.getAllMoneySpent("Monthly");
             if (data == -1) return "Error";
             else {
-                return data + "";
+                return String.format( "%.2f", data );
+            }
+        }
+
+        if (identifier.equalsIgnoreCase("total_earnings_current_month")) {
+            double data = query.getAllMoneySpent("CurrentMonth");
+            if (data == -1) return "Error";
+            else {
+                return String.format( "%.2f", data );
             }
         }
 

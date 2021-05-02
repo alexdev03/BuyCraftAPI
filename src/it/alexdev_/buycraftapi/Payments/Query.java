@@ -1,15 +1,12 @@
-package it.alexdev_.buycraftapi.Payments;
+package alexdev_.buycraftapi.Payments;
 
-import it.alexdev_.buycraftapi.FileManager.FileManager;
-import it.alexdev_.buycraftapi.Main;
+import alexdev_.buycraftapi.FileManager.FileManager;
+import alexdev_.buycraftapi.Main;
 import net.buycraft.plugin.data.RecentPayment;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class Query {
 
@@ -17,6 +14,16 @@ public class Query {
 
     public Query(FileManager fileManager) {
         this.fileManager = fileManager;
+    }
+
+    public String getPlayerTotal(String player){
+        for(String index : Objects.requireNonNull(fileManager.getFileConfiguration().getConfigurationSection("Global")).getKeys(false)){
+            String tmpPlayer = fileManager.getFileConfiguration().getString("Global."+index+".Name");
+            if(tmpPlayer!=null && tmpPlayer.equalsIgnoreCase(player)){
+                return fileManager.getFileConfiguration().getDouble("Global."+index+".Value")+"";
+            }
+        }
+        return null;
     }
 
     public String getPlayerFromTop(String top, int position) {
@@ -31,6 +38,13 @@ public class Query {
             case "Monthly": {
                 if (fileManager.getFileConfiguration().isConfigurationSection("Monthly." + position)) {
                     return fileManager.getFileConfiguration().getString("Monthly." + position + ".Name");
+                } else {
+                    return null;
+                }
+            }
+            case "CurrentMonth": {
+                if (fileManager.getFileConfiguration().isConfigurationSection("CurrentMonth." + position)) {
+                    return fileManager.getFileConfiguration().getString("CurrentMonth." + position + ".Name");
                 } else {
                     return null;
                 }
@@ -58,6 +72,13 @@ public class Query {
                     return -1;
                 }
             }
+            case "CurrentMonth": {
+                if (fileManager.getFileConfiguration().isConfigurationSection("CurrentMonth." + position)) {
+                    return fileManager.getFileConfiguration().getDouble("CurrentMonth." + position + ".Value");
+                } else {
+                    return -1;
+                }
+            }
             default:
                 return -1;
         }
@@ -68,13 +89,19 @@ public class Query {
         switch (type){
             case "Global":{
                 for(String id : fileManager.getFileConfiguration().getConfigurationSection("Global").getKeys(false)){
-                    amount += fileManager.getFileConfiguration().getDouble("Global." + id + ".Value");
+                    amount += Double.parseDouble(fileManager.getFileConfiguration().getString("Global." + id + ".Value"));
                 }
                 break;
             }
             case "Monthly":{
                 for(String id : fileManager.getFileConfiguration().getConfigurationSection("Monthly").getKeys(false)){
-                    amount += fileManager.getFileConfiguration().getDouble("Monthly." + id + ".Value");
+                    amount += Double.parseDouble(fileManager.getFileConfiguration().getString("Monthly." + id + ".Value"));
+                }
+                break;
+            }
+            case "CurrentMonth": {
+                for(String id : fileManager.getFileConfiguration().getConfigurationSection("CurrentMonth").getKeys(false)){
+                    amount += Double.parseDouble(fileManager.getFileConfiguration().getString("CurrentMonth." + id + ".Value"));
                 }
                 break;
             }
