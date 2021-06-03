@@ -32,7 +32,6 @@ public class Main extends PlaceholderExpansion {
 
 
     public static List<RecentPayment> recentPayments = null;
-
     private int maxPayments = 100;
 
     private Vault vault;
@@ -82,7 +81,7 @@ public class Main extends PlaceholderExpansion {
 
 
         File file = new File("plugins/PlaceholderAPI/expansions/BuyCraftAPI/config.yml");
-        if(!file.exists()) {
+        if (!file.exists()) {
             try {
                 file.createNewFile();
             } catch (IOException e) {
@@ -102,11 +101,11 @@ public class Main extends PlaceholderExpansion {
 
         try {
             useUUID = config.getBoolean("UseUUIDS");
-        }catch (NullPointerException e){
+        } catch (NullPointerException e) {
             useUUID = true;
         }
 
-        if(useUUID) placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Using UUIDS for payments");
+        if (useUUID) placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Using UUIDS for payments");
         else placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Using Players Names for payments");
 
         vault = (Vault) Bukkit.getServer().getPluginManager().getPlugin("Vault");
@@ -115,9 +114,7 @@ public class Main extends PlaceholderExpansion {
         vaultHook(placeholderAPI1);
 
 
-
         placeholders = new Placeholders(query);
-
 
         List<Integer> tasksId = new ArrayList<>();
 
@@ -127,9 +124,10 @@ public class Main extends PlaceholderExpansion {
             unregister();
             return false;
         } else {
-            Tasks tasks = new Tasks(placeholderAPI);
+            int value = config.getInt("TaskTime");
+            Tasks tasks = new Tasks(placeholderAPI, value);
             countPayments();
-            placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Loading tasks");
+            placeholderAPI.getLogger().log(Level.INFO, "[BuyCraftAPI] Loading tasks with repeating time " + value + " minutes");
             tasksId.add(tasks.loadPaymentsTask());
             tasksId.add(tasks.loadCalcTotTask());
             tasksId.add(tasks.loadCalcMontlhyTask());

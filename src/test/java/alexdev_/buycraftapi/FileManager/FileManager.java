@@ -28,6 +28,14 @@ public class FileManager {
         return fileConfiguration;
     }
 
+    public FileManager() {
+        if(!fileConfiguration.isConfigurationSection("TastTime")) generateTaskTime();
+    }
+
+    public void generateTaskTime(){
+        fileConfiguration.set("TaskTime", 60);
+        save(fileConfiguration, config);
+    }
 
     public String getDefaultCurrency() {
         return defaultCurrency;

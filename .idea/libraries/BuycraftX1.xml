@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="BuycraftX1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libraries/BuycraftX.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
