@@ -1,7 +1,7 @@
 package alexdev_.buycraftapi.Payments;
 
 import alexdev_.buycraftapi.FileManager.FileManager;
-import alexdev_.buycraftapi.Main;
+import alexdev_.buycraftapi.BuyAPI;
 import net.buycraft.plugin.data.RecentPayment;
 
 import java.math.BigDecimal;
@@ -157,10 +157,10 @@ public class Query {
 
 
     public String[] getRecentPayment(int position) {
-        if (position < Main.recentPayments.size()) {
+        if (position < BuyAPI.recentPayments.size()) {
             String[] data = new String[3];
 
-            RecentPayment payment = Main.recentPayments.get(position);
+            RecentPayment payment = BuyAPI.recentPayments.get(position);
             String name = payment.getPlayer().getName();
             data[0] = name;
             String currency = payment.getCurrency().getIso4217();
@@ -178,7 +178,7 @@ public class Query {
         HashMap<String, Double> values = new HashMap<>();
 
 
-        for (RecentPayment recentPayment : Main.recentPayments) {
+        for (RecentPayment recentPayment : BuyAPI.recentPayments) {
             if (!values.containsKey(recentPayment.getPlayer().getName())) {
                 values.put(recentPayment.getPlayer().getName(), round(recentPayment.getAmount().doubleValue(), 2));
             } else {
@@ -191,7 +191,7 @@ public class Query {
 
     public HashMap<String, String> loadCurrency() {
         HashMap<String, String> currency = new HashMap<>();
-        for (RecentPayment recentPayment : Main.recentPayments) {
+        for (RecentPayment recentPayment : BuyAPI.recentPayments) {
             if (!currency.containsKey(recentPayment.getPlayer().getName())) {
                 currency.put(recentPayment.getPlayer().getName(), recentPayment.getCurrency().getIso4217());
             }

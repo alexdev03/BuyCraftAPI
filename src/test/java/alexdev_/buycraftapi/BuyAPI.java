@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 
-public class Main extends PlaceholderExpansion {
+public class BuyAPI extends PlaceholderExpansion {
 
 
     public static List<RecentPayment> recentPayments = null;
@@ -39,13 +39,13 @@ public class Main extends PlaceholderExpansion {
 
     public FileManager fileManager;
     public PaymentsManager paymentsManager;
-    private static Main main;
+    private static BuyAPI buyAPI;
     private Placeholders placeholders;
     public boolean useUUID = false;
 
 
-    public static Main getInstance() {
-        return main;
+    public static BuyAPI getInstance() {
+        return buyAPI;
     }
 
     public FileManager getFileManager() {
@@ -54,7 +54,7 @@ public class Main extends PlaceholderExpansion {
 
     @Override
     public boolean canRegister() {
-        main = this;
+        buyAPI = this;
         fileManager = new FileManager();
         Query query = new Query(fileManager);
         paymentsManager = new PaymentsManager(100);
@@ -138,7 +138,7 @@ public class Main extends PlaceholderExpansion {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (!placeholderAPI1.getLocalExpansionManager().getExpansions().contains(main)) {
+                if (!placeholderAPI1.getLocalExpansionManager().getExpansions().contains(buyAPI)) {
                     for (Integer task : tasksId) {
                         Bukkit.getScheduler().cancelTask(task);
                     }
@@ -163,7 +163,7 @@ public class Main extends PlaceholderExpansion {
 
 
     public @NotNull String getVersion() {
-        return "2.8";
+        return "2.9";
     }
 
     @Override

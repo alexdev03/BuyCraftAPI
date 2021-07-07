@@ -1,7 +1,7 @@
 package alexdev_.buycraftapi.Placeholders;
 
 import alexdev_.buycraftapi.FileManager.FileManager;
-import alexdev_.buycraftapi.Main;
+import alexdev_.buycraftapi.BuyAPI;
 import alexdev_.buycraftapi.Payments.Query;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -20,8 +20,8 @@ public class Placeholders {
     public Placeholders(Query query){
 
         this.query = query;
-        maxPayments = Main.getInstance().getMaxPayments();
-        fileManager = Main.getInstance().getFileManager();
+        maxPayments = BuyAPI.getInstance().getMaxPayments();
+        fileManager = BuyAPI.getInstance().getFileManager();
 
     }
 
@@ -50,7 +50,7 @@ public class Placeholders {
 
 
             OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(query.getRecentPayment(num)[0]);
-            return Main.perms.getPrimaryGroup(null, offlinePlayer);
+            return BuyAPI.perms.getPrimaryGroup(null, offlinePlayer);
         }
 
         if (identifier.contains("recent_name_")) {
@@ -93,7 +93,6 @@ public class Placeholders {
             if (num > maxPayments - 1 || num < 0)
                 return "Error, Invalid number! You can put a number from 0 to " + (maxPayments - 1);
 
-
             return String.valueOf(Query.round(Double.parseDouble(query.getRecentPayment(num)[2]), 2));
         }
 
@@ -105,7 +104,7 @@ public class Placeholders {
             if (player == null) return "Error";
             else {
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
-                return Main.perms.getPrimaryGroup(null, offlinePlayer);
+                return BuyAPI.perms.getPrimaryGroup(null, offlinePlayer);
             }
         }
 
@@ -117,7 +116,7 @@ public class Placeholders {
             if (player == null) return "Error";
             else {
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
-                return Main.perms.getPrimaryGroup(null, offlinePlayer);
+                return BuyAPI.perms.getPrimaryGroup(null, offlinePlayer);
             }
         }
 
@@ -129,7 +128,7 @@ public class Placeholders {
             if (player == null) return "Error";
             else {
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player);
-                return Main.perms.getPrimaryGroup(null, offlinePlayer);
+                return BuyAPI.perms.getPrimaryGroup(null, offlinePlayer);
             }
         }
 
@@ -247,7 +246,7 @@ public class Placeholders {
             HashMap<String, String> currency = query.loadCurrency();
             if (maxPayments == 0) return "Payments could not be found";
             for (int i = 0; i < Query.sortMap(values).size(); i++) {
-                p.sendMessage(query.getNameWanted(values, i) + " " + Query.round(Double.parseDouble(query.getPriceWanted(values, i)), 2) + " " + query.getCurrencyWanted(currency, values, i) + " " + Main.perms.getPrimaryGroup(null, Bukkit.getOfflinePlayer(query.getNameWanted(values, i))));
+                p.sendMessage(query.getNameWanted(values, i) + " " + Query.round(Double.parseDouble(query.getPriceWanted(values, i)), 2) + " " + query.getCurrencyWanted(currency, values, i) + " " + BuyAPI.perms.getPrimaryGroup(null, Bukkit.getOfflinePlayer(query.getNameWanted(values, i))));
             }
             return "";
         }

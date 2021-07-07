@@ -1,6 +1,7 @@
 package alexdev_.buycraftapi.FileManager;
 
-import alexdev_.buycraftapi.Main;
+
+import alexdev_.buycraftapi.BuyAPI;
 import net.buycraft.plugin.data.RecentPayment;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -10,7 +11,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.ParseException;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -88,7 +89,7 @@ public class FileManager {
             for (String player : value.keySet()) {
                 if (value.get(player).equals(data) && data > 0 && !containsSection(fileConfiguration, "Global", "UUID", player)) {
                     fileConfiguration.createSection("Global." + position);
-                    if (Main.getInstance().useUUID) fileConfiguration.set("Monthly." + position + ".UUID", player);
+                    if (BuyAPI.getInstance().useUUID) fileConfiguration.set("Monthly." + position + ".UUID", player);
                     fileConfiguration.set("Global." + position + ".Name", Bukkit.getOfflinePlayer(UUID.fromString(player)).getName());
                     fileConfiguration.set("Global." + position + ".Value", data);
                     position++;
@@ -101,14 +102,14 @@ public class FileManager {
     public void savePaymentsInFile() {
         if (!folder.exists()) folder.mkdir();
         if (!dataFolder.exists()) dataFolder.mkdir();
-        for (RecentPayment recentPayment : Main.recentPayments) {
+        for (RecentPayment recentPayment : BuyAPI.recentPayments) {
 
-            if (Main.getInstance().useUUID) {
+            if (BuyAPI.getInstance().useUUID) {
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(recentPayment.getPlayer().getName());
                 if (!offlinePlayer.hasPlayedBefore()) continue;
             }
             String add;
-            if (Main.getInstance().useUUID)
+            if (BuyAPI.getInstance().useUUID)
                 add = Bukkit.getOfflinePlayer(recentPayment.getPlayer().getName()).getUniqueId().toString();
             else add = recentPayment.getPlayer().getName();
             File player = new File("plugins/PlaceholderAPI/expansions/BuyCraftAPI/Data/" + add + ".yml");
@@ -168,13 +169,9 @@ public class FileManager {
             }
 
             for (String payment : fileConfiguration.getConfigurationSection("Data.Payments").getKeys(false)) {
-                SimpleDateFormat format = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
-                Date date = null;
-                try {
-                    date = format.parse(payment);
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+                SimpleDateFormat format = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
+                Date date;
+                date = format.parse(payment, new ParsePosition(0));
                 Date now = new Date(System.currentTimeMillis());
                 Date monthago = new Date(System.currentTimeMillis());
                 monthago.setMonth(monthago.getMonth() - 1);
@@ -214,7 +211,7 @@ public class FileManager {
             for (String player : value.keySet()) {
                 if (value.get(player).equals(data) && data > 0 && !containsSection(fileConfiguration, "Monthly", "UUID", player)) {
                     fileConfiguration.createSection("Monthly." + position);
-                    if (Main.getInstance().useUUID) fileConfiguration.set("Monthly." + position + ".UUID", player);
+                    if (BuyAPI.getInstance().useUUID) fileConfiguration.set("Monthly." + position + ".UUID", player);
                     fileConfiguration.set("Monthly." + position + ".Name", Bukkit.getOfflinePlayer(UUID.fromString(player)).getName());
                     fileConfiguration.set("Monthly." + position + ".Value", data);
                     position++;
@@ -237,13 +234,9 @@ public class FileManager {
             }
 
             for (String payment : fileConfiguration.getConfigurationSection("Data.Payments").getKeys(false)) {
-                SimpleDateFormat format = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
-                Date date = null;
-                try {
-                    date = format.parse(payment);
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+                SimpleDateFormat format = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
+                Date date;
+                date = format.parse(payment, new ParsePosition(0));
                 Date now = new Date(System.currentTimeMillis());
                 Date currentMonth = new Date(System.currentTimeMillis());
                 currentMonth.setDate(1);
@@ -284,7 +277,7 @@ public class FileManager {
             for (String player : value.keySet()) {
                 if (value.get(player).equals(data) && data > 0 && !containsSection(fileConfiguration, "CurrentMonth", "UUID", player)) {
                     fileConfiguration.createSection("CurrentMonth." + position);
-                    if (Main.getInstance().useUUID) fileConfiguration.set("Monthly." + position + ".UUID", player);
+                    if (BuyAPI.getInstance().useUUID) fileConfiguration.set("Monthly." + position + ".UUID", player);
                     fileConfiguration.set("CurrentMonth." + position + ".Name", Bukkit.getOfflinePlayer(UUID.fromString(player)).getName());
                     fileConfiguration.set("CurrentMonth." + position + ".Value", data);
                     position++;
