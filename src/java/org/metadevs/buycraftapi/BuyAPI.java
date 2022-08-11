@@ -101,7 +101,7 @@ public class BuyAPI extends PlaceholderExpansion {
 
 
     public @NotNull String getVersion() {
-        return "4.0";
+        return "4.1";
     }
 
     @Override

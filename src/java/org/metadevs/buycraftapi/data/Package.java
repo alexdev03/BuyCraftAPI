@@ -1,3 +1,15 @@
 package org.metadevs.buycraftapi.data;
 
-public record Package(int id, String name) {}
+
+import lombok.Getter;
+
+@Getter
+public class Package {
+
+    private final int id;
+    private final String name;
+    public Package(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+}

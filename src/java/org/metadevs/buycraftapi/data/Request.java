@@ -102,7 +102,7 @@ public class Request {
                 int idPack = pack.getInt("id");
                 String namePack = pack.getString("name");
 
-                Optional<Package> optional = this.packages.stream().filter(p -> p.id() == idPack).findFirst();
+                Optional<Package> optional = this.packages.stream().filter(p -> p.getId() == idPack).findFirst();
 
                 if (optional.isPresent()) {
                     packageList.add(optional.get());

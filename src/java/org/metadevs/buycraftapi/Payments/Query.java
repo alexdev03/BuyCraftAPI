@@ -1,6 +1,7 @@
 package org.metadevs.buycraftapi.Payments;
 
 
+import lombok.val;
 import org.metadevs.buycraftapi.BuyAPI;
 import org.metadevs.buycraftapi.data.Payment;
 import lombok.Getter;
@@ -14,6 +15,9 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.metadevs.buycraftapi.data.Type.CURRENT_MONTH;
+import static org.metadevs.buycraftapi.data.Type.MONTHLY;
 
 @Getter
 public class Query {
@@ -97,7 +101,7 @@ public class Query {
         switch (top) {
             case GLOBAL: {
                 if (payments.size() > position) {
-                    
+
                     return payments.get(position).getName();
                 }
             }
@@ -115,21 +119,21 @@ public class Query {
                 return null;
         }
     }
-    
+
     public TopValue getTop(Type type, int position) {
         switch (type) {
             case GLOBAL: {
                 if (payments.size() > 0) {
                     Map<UUID, Double> map = new HashMap<>();
-                    for(Payment payment : payments) {
-                        if(map.containsKey(payment.getUuid())) {
+                    for (Payment payment : payments) {
+                        if (map.containsKey(payment.getUuid())) {
                             map.put(payment.getUuid(), map.get(payment.getUuid()) + payment.getAmount());
                         } else {
                             map.put(payment.getUuid(), payment.getAmount());
                         }
                     }
 
-                    if(position > map.size()) {
+                    if (position > map.size()) {
                         return null;
                     }
 
@@ -146,15 +150,15 @@ public class Query {
             case MONTHLY: {
                 if (monthlyPayments.size() > 0) {
                     Map<UUID, Double> map = new HashMap<>();
-                    for(Payment payment : monthlyPayments) {
-                        if(map.containsKey(payment.getUuid())) {
+                    for (Payment payment : monthlyPayments) {
+                        if (map.containsKey(payment.getUuid())) {
                             map.put(payment.getUuid(), map.get(payment.getUuid()) + payment.getAmount());
                         } else {
                             map.put(payment.getUuid(), payment.getAmount());
                         }
                     }
 
-                    if(position > map.size()) {
+                    if (position > map.size()) {
                         return null;
                     }
 
@@ -171,22 +175,20 @@ public class Query {
             case CURRENT_MONTH: {
                 if (currentMonthPayments.size() > 0) {
                     Map<UUID, Double> map = new HashMap<>();
-                    for(Payment payment : currentMonthPayments) {
-                        if(map.containsKey(payment.getUuid())) {
+                    for (Payment payment : currentMonthPayments) {
+                        if (map.containsKey(payment.getUuid())) {
                             map.put(payment.getUuid(), map.get(payment.getUuid()) + payment.getAmount());
                         } else {
                             map.put(payment.getUuid(), payment.getAmount());
                         }
                     }
 
-                    if(position > map.size()) {
+                    if (position > map.size()) {
                         return null;
                     }
 
                     Map<UUID, Double> sortedMap = new TreeMap<>(Comparator.comparingDouble(map::get).reversed());
                     sortedMap.putAll(map);
-
-
 
 
                     String name = payments.stream().filter(p -> p.getUuid().equals(sortedMap.keySet().toArray()[position - 1])).findFirst().orElse(null).getName();
@@ -227,25 +229,26 @@ public class Query {
     public double getAllMoneySpent(Type type) {
         double amount = 0D;
         switch (type) {
-            case GLOBAL -> {
+            case GLOBAL:
                 for (Payment payment : payments) {
                     amount += payment.getAmount();
                 }
-            }
-            case MONTHLY -> {
+                break;
+            case MONTHLY:
                 for (Payment payment : monthlyPayments) {
                     amount += payment.getAmount();
                 }
-            }
-            case CURRENT_MONTH -> {
+                break;
+
+            case CURRENT_MONTH:
                 for (Payment payment : currentMonthPayments) {
                     amount += payment.getAmount();
                 }
-            }
-            default -> amount = -1D;
+                break;
+            default:
+                amount = -1D;
         }
         return amount;
-
     }
 
 
