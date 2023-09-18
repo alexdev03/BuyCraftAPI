@@ -1,10 +1,9 @@
-package org.metadevs.buycraftapi.Payments;
+package org.metadevs.buycraftapi.payments;
 
 
-import lombok.val;
-import org.metadevs.buycraftapi.BuyAPI;
-import org.metadevs.buycraftapi.data.Payment;
 import lombok.Getter;
+import org.metadevs.buycraftapi.BuyCraftAPI;
+import org.metadevs.buycraftapi.data.Payment;
 import org.metadevs.buycraftapi.data.TopValue;
 import org.metadevs.buycraftapi.data.Type;
 
@@ -13,78 +12,64 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.metadevs.buycraftapi.data.Type.CURRENT_MONTH;
-import static org.metadevs.buycraftapi.data.Type.MONTHLY;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Getter
 public class Query {
 
-    private final BuyAPI buyAPI;
-    private List<Payment> payments;
+    private final BuyCraftAPI buyCraftAPI;
+    private final List<Payment> payments;
     private List<Payment> monthlyPayments;
     private List<Payment> currentMonthPayments;
 
-    public Query(BuyAPI buyAPI) {
-        this.buyAPI = buyAPI;
-        this.payments = new ArrayList<>();
-        this.monthlyPayments = new ArrayList<>();
-        this.currentMonthPayments = new ArrayList<>();
+    private final ExecutorService executorService;
+
+    public Query(BuyCraftAPI buyCraftAPI) {
+        this.buyCraftAPI = buyCraftAPI;
+        this.payments = new CopyOnWriteArrayList<>();
+        this.monthlyPayments = new CopyOnWriteArrayList<>();
+        this.currentMonthPayments = new CopyOnWriteArrayList<>();
+        this.executorService = Executors.newFixedThreadPool(25);
     }
 
     public CompletableFuture<Boolean> loadPayments() {
-        return CompletableFuture.supplyAsync(() -> {
+        return buyCraftAPI.getRequest().getAllPayments().thenApply(payments -> {
 
-            Semaphore semaphore = new Semaphore(0);
-
-            AtomicBoolean success = new AtomicBoolean(true);
-
-            buyAPI.getRequest().getAllPayments().whenComplete((payments, throwable) -> {
-
-                if (throwable != null) {
-                    throwable.printStackTrace();
-                    success.set(false);
-                }
-
-                buyAPI.getPlaceholdersClass().setMaxPayments(payments.size());
-
-                monthlyPayments = new ArrayList<>();
-                currentMonthPayments = new ArrayList<>();
-
-                for (Payment payment : payments) {
-
-                    //check if payments is in the last 30 days
-                    if (payment.getDate().isAfter(LocalDateTime.now().minusDays(30))) {
-                        monthlyPayments.add(payment);
-                    }
-
-                    if (payment.getDate().getMonth().equals(LocalDateTime.now().getMonth()) && payment.getDate().getYear() == LocalDateTime.now().getYear()) {
-                        currentMonthPayments.add(payment);
-                    }
-                }
-
-                Comparator<Payment> amount = Comparator.comparingDouble(Payment::getAmount);
-
-                monthlyPayments.sort(amount);
-                currentMonthPayments.sort(amount);
-                payments.sort(amount);
-
-
-                this.payments = payments;
-                semaphore.release();
-            });
-
-            try {
-                semaphore.acquire();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            if (payments == null) {
+                return false;
             }
 
-            return success.get();
-        });
+            buyCraftAPI.getPlaceholdersIstance().setMaxPayments(payments.size());
 
+            monthlyPayments = new CopyOnWriteArrayList<>();
+            currentMonthPayments = new CopyOnWriteArrayList<>();
+
+            for (Payment payment : payments) {
+
+                if (payment.getDate().isAfter(LocalDateTime.now().minusDays(30))) {
+                    monthlyPayments.add(payment);
+                }
+
+                if (payment.getDate().getMonth().equals(LocalDateTime.now().getMonth()) && payment.getDate().getYear() == LocalDateTime.now().getYear()) {
+                    currentMonthPayments.add(payment);
+                }
+            }
+
+            Comparator<Payment> amount = Comparator.comparingDouble(Payment::getAmount);
+
+            monthlyPayments.sort(amount);
+            currentMonthPayments.sort(amount);
+            payments.sort(amount);
+
+            this.payments.clear();
+            this.payments.addAll(payments);
+
+            return true;
+        }).exceptionally(e -> {
+            throw new RuntimeException(e);
+        });
     }
 
     public String getPlayerTotal(String player) {
@@ -123,84 +108,69 @@ public class Query {
     public TopValue getTop(Type type, int position) {
         switch (type) {
             case GLOBAL: {
-                if (payments.size() > 0) {
-                    Map<UUID, Double> map = new HashMap<>();
-                    for (Payment payment : payments) {
-                        if (map.containsKey(payment.getUuid())) {
-                            map.put(payment.getUuid(), map.get(payment.getUuid()) + payment.getAmount());
-                        } else {
-                            map.put(payment.getUuid(), payment.getAmount());
-                        }
-                    }
-
-                    if (position > map.size()) {
-                        return null;
-                    }
-
-                    Map<UUID, Double> sortedMap = new TreeMap<>(Comparator.comparingDouble(map::get).reversed());
-                    sortedMap.putAll(map);
-
-                    String name = payments.stream().filter(p -> p.getUuid().equals(sortedMap.keySet().toArray()[position - 1])).findFirst().orElse(null).getName();
-                    UUID uuid = (UUID) sortedMap.keySet().toArray()[position - 1];
-                    double amount = sortedMap.get(uuid);
-
-                    return new TopValue(name, uuid, amount);
-                }
+                return getTop(payments, position);
             }
             case MONTHLY: {
-                if (monthlyPayments.size() > 0) {
-                    Map<UUID, Double> map = new HashMap<>();
-                    for (Payment payment : monthlyPayments) {
-                        if (map.containsKey(payment.getUuid())) {
-                            map.put(payment.getUuid(), map.get(payment.getUuid()) + payment.getAmount());
-                        } else {
-                            map.put(payment.getUuid(), payment.getAmount());
-                        }
-                    }
-
-                    if (position > map.size()) {
-                        return null;
-                    }
-
-                    Map<UUID, Double> sortedMap = new TreeMap<>(Comparator.comparingDouble(map::get).reversed());
-                    sortedMap.putAll(map);
-
-                    String name = payments.stream().filter(p -> p.getUuid().equals(sortedMap.keySet().toArray()[position - 1])).findFirst().orElse(null).getName();
-                    UUID uuid = (UUID) sortedMap.keySet().toArray()[position - 1];
-                    double amount = sortedMap.get(uuid);
-
-                    return new TopValue(name, uuid, amount);
-                }
+                return getTop(monthlyPayments, position);
             }
             case CURRENT_MONTH: {
-                if (currentMonthPayments.size() > 0) {
-                    Map<UUID, Double> map = new HashMap<>();
-                    for (Payment payment : currentMonthPayments) {
-                        if (map.containsKey(payment.getUuid())) {
-                            map.put(payment.getUuid(), map.get(payment.getUuid()) + payment.getAmount());
-                        } else {
-                            map.put(payment.getUuid(), payment.getAmount());
-                        }
-                    }
-
-                    if (position > map.size()) {
-                        return null;
-                    }
-
-                    Map<UUID, Double> sortedMap = new TreeMap<>(Comparator.comparingDouble(map::get).reversed());
-                    sortedMap.putAll(map);
-
-
-                    String name = payments.stream().filter(p -> p.getUuid().equals(sortedMap.keySet().toArray()[position - 1])).findFirst().orElse(null).getName();
-                    UUID uuid = (UUID) sortedMap.keySet().toArray()[position - 1];
-                    double amount = sortedMap.get(uuid);
-
-                    return new TopValue(name, uuid, amount);
-                }
+                return getTop(currentMonthPayments, position);
             }
             default:
                 return null;
         }
+    }
+
+    private TopValue getTop(List<Payment> payments, int position) {
+        if (payments == null) {
+            buyCraftAPI.getLogger().severe("Payments list is null");
+            return null;
+        }
+
+        if (payments.isEmpty()) {
+            buyCraftAPI.getLogger().severe("Payments list is empty");
+            return null;
+        }
+
+        if (position > payments.size()) {
+            buyCraftAPI.getLogger().severe("Position " + position + " is bigger than the size of the list " + payments.size());
+            return null;
+        }
+
+
+        Map<UUID, Double> map = new HashMap<>();
+        for (Payment payment : payments) {
+            if (map.containsKey(payment.getUuid())) {
+                map.put(payment.getUuid(), map.get(payment.getUuid()) + payment.getAmount());
+            } else {
+                map.put(payment.getUuid(), payment.getAmount());
+            }
+        }
+
+        NavigableMap<UUID, Double> sortedMap = new TreeMap<>(Comparator.comparingDouble(map::get).reversed());
+        sortedMap.putAll(map);
+
+        if (position > sortedMap.size()) {
+//            buyCraftAPI.getLogger().severe("Position " + position + " is bigger than the size of the map " + sortedMap.size());
+            return null;
+        }
+
+        UUID uuid = sortedMap.keySet().toArray(new UUID[0])[position - 1];
+
+        double amount = sortedMap.get(uuid);
+
+        Optional<Payment> payment = payments.stream().filter(p -> p.getUuid().equals(uuid)).findFirst();
+
+        if (!payment.isPresent()) {
+            buyCraftAPI.getLogger().severe("Payment not found for uuid " + uuid);
+            return null;
+        }
+
+        String name = payment.get().getName();
+
+//        buyCraftAPI.getLogger().info("Top " + position + " " + name + " " + amount);
+
+        return new TopValue(name, uuid, amount);
     }
 
 
@@ -300,8 +270,10 @@ public class Query {
             List<Payment> paymentList = new ArrayList<>(payments);
             paymentList.sort(Comparator.comparing(Payment::getDate));
             Collections.reverse(paymentList);
+//            buyCraftAPI.getLogger().info("Recent payment " + paymentList.get(position).getName() + " " + paymentList.get(position).getAmount());
             return paymentList.get(position);
         }
+        buyCraftAPI.getLogger().severe("Position " + position + " is bigger than the size of the list " + payments.size());
         return null;
     }
 
