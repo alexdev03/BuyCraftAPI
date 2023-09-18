@@ -1,8 +1,8 @@
-package org.metadevs.buycraftapi.Placeholders;
+package org.metadevs.buycraftapi.placeholders;
 
 import lombok.Setter;
-import org.metadevs.buycraftapi.BuyAPI;
-import org.metadevs.buycraftapi.Payments.Query;
+import org.metadevs.buycraftapi.BuyCraftAPI;
+import org.metadevs.buycraftapi.payments.Query;
 import org.metadevs.buycraftapi.data.Payment;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -16,14 +16,14 @@ import static org.metadevs.buycraftapi.data.Type.*;
 public class Placeholders {
 
 
-    private final BuyAPI buyAPI;
+    private final BuyCraftAPI buyCraftAPI;
     private final Query query;
     @Setter
     private int maxPayments;
 
-    public Placeholders(BuyAPI buyAPI) {
-        this.buyAPI = buyAPI;
-        this.query = buyAPI.getQuery();
+    public Placeholders(BuyCraftAPI buyCraftAPI) {
+        this.buyCraftAPI = buyCraftAPI;
+        this.query = buyCraftAPI.getQuery();
     }
 
 
@@ -56,7 +56,7 @@ public class Placeholders {
 
 
             OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(query.getRecentPayment(num).getUuid());
-            return buyAPI.getPerms().getPrimaryGroup(null, offlinePlayer);
+            return buyCraftAPI.getPerms().getPrimaryGroup(null, offlinePlayer);
         }
 
         if (identifier.contains("recent_name_")) {
@@ -220,7 +220,7 @@ public class Placeholders {
         if (payment == null) return "Error";
         else {
             OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(payment.getUuid());
-            return buyAPI.getPerms().getPrimaryGroup(null, offlinePlayer);
+            return buyCraftAPI.getPerms().getPrimaryGroup(null, offlinePlayer);
         }
     }
 
