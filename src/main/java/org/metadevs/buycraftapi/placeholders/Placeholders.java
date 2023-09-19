@@ -14,8 +14,6 @@ import org.metadevs.buycraftapi.data.Type;
 import static org.metadevs.buycraftapi.data.Type.*;
 
 public class Placeholders {
-
-
     private final BuyCraftAPI buyCraftAPI;
     private final Query query;
     @Setter
@@ -25,8 +23,6 @@ public class Placeholders {
         this.buyCraftAPI = buyCraftAPI;
         this.query = buyCraftAPI.getQuery();
     }
-
-
 
     public String onPlaceholderRequest(Player p, @NotNull String identifier) {
 

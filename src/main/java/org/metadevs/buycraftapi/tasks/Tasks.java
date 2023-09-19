@@ -25,6 +25,7 @@ public class Tasks {
             public void run() {
 
                 if(!buyCraftAPI.isRegistered()) {
+                    cancel();
                     return;
                 }
 
