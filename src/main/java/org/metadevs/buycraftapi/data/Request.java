@@ -1,20 +1,22 @@
 package org.metadevs.buycraftapi.data;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
+import okhttp3.Response;
+import org.jetbrains.annotations.NotNull;
 import org.metadevs.buycraftapi.BuyCraftAPI;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.ProtocolException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.*;
 
 import static java.lang.Thread.sleep;
@@ -24,29 +26,33 @@ public class Request {
     private final List<Package> packages;
     private final String secret;
     private final BuyCraftAPI buyCraftAPI;
+    private final OkHttpClient client;
+    private final Gson gson;
 
     public Request(String secret, BuyCraftAPI buyCraftAPI) {
         this.packages = new CopyOnWriteArrayList<>();
         this.secret = secret;
         this.buyCraftAPI = buyCraftAPI;
+        this.client = new OkHttpClient();
+        this.gson = new Gson();
     }
 
     public CompletableFuture<List<Payment>> getAllPayments() {
         return CompletableFuture.supplyAsync(() -> {
 
-            JSONObject response;
+            JsonObject response;
 
             long start = System.currentTimeMillis();
 
             try {
-                response = getPaymentsByPage(1).get(2, TimeUnit.SECONDS);
+                response = getPaymentsByPage2(1).get(2, TimeUnit.SECONDS);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 throw new RuntimeException(e);
             }
 
-            int finalPage = response.getInt("last_page");
+            int finalPage = response.get("last_page").getAsInt();
 
-            long total = response.getLong("total");
+            long total = response.get("total").getAsLong();
 
             buyCraftAPI.getLogger().info("Loading " + total + " payments..." + " Pages: " + finalPage);
 
@@ -59,7 +65,7 @@ public class Request {
             for (int i = 2; i <= finalPage; i++) {
                 List<Payment> pays;
                 try {
-                    pays = getPayment(getPaymentsByPage(i).get(5, TimeUnit.SECONDS));
+                    pays = getPayment(getPaymentsByPage2(i).get(5, TimeUnit.SECONDS));
                     sleep(1200);
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
                     buyCraftAPI.getLogger().info("Error: " + e.getMessage());
@@ -77,45 +83,45 @@ public class Request {
         }, buyCraftAPI.getQuery().getExecutorService());
     }
 
-    public List<Payment> getPayment(JSONObject jsonObject) {
+    public List<Payment> getPayment(JsonObject jsonObject) {
 
-        JSONArray array = jsonObject.getJSONArray("data");
+        JsonArray array = jsonObject.getAsJsonArray("data");
         List<Payment> payments = new ArrayList<>();
 
-        for (Object payment : array) {
+        for (JsonElement payment : array) {
             try {
-                JSONObject paymentObject = (JSONObject) payment;
+                JsonObject paymentObject = payment.getAsJsonObject();
 
-                int id = paymentObject.getInt("id");
+                int id = paymentObject.get("id").getAsInt();
 
-                String status = paymentObject.getString("status");
+                String status = paymentObject.get("status").getAsString();
 
-                if(!status.equals("Complete")) {
+                if (!status.equals("Complete")) {
                     continue;
                 }
 
-                double amount = paymentObject.getDouble("amount");
+                double amount = paymentObject.get("amount").getAsDouble();
 
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
-                LocalDateTime date = LocalDateTime.parse(paymentObject.getString("date"), formatter);
+                LocalDateTime date = LocalDateTime.parse(paymentObject.get("date").getAsString(), formatter);
 
 
-                String email = paymentObject.getString("email");
+                String email = paymentObject.get("email").getAsString();
 
-                String gateway = paymentObject.getJSONObject("gateway").getString("name");
+                String gateway = paymentObject.getAsJsonObject("gateway").get("name").getAsString();
 
-                String currency = paymentObject.getJSONObject("currency").getString("iso_4217");
+                String currency = paymentObject.getAsJsonObject("currency").get("iso_4217").getAsString();
 
-                UUID uuid = convertUUID(paymentObject.getJSONObject("player").getString("uuid"));
-                String name = paymentObject.getJSONObject("player").getString("name");
+                UUID uuid = convertUUID(paymentObject.getAsJsonObject("player").get("uuid").getAsString());
+                String name = paymentObject.getAsJsonObject("player").get("name").getAsString();
 
                 List<Package> packageList = new ArrayList<>();
-                JSONArray packages = paymentObject.getJSONArray("packages");
+                JsonArray packages = paymentObject.getAsJsonArray("packages");
 
-                for (Object packageObject : packages) {
-                    JSONObject pack = (JSONObject) packageObject;
-                    int idPack = pack.getInt("id");
-                    String namePack = pack.getString("name");
+                for (JsonElement packageObject : packages) {
+                    JsonObject pack = packageObject.getAsJsonObject();
+                    int idPack = pack.get("id").getAsInt();
+                    String namePack = pack.get("name").getAsString();
 
                     Optional<Package> optional = this.packages.stream().filter(p -> p.getId() == idPack).findFirst();
 
@@ -131,7 +137,7 @@ public class Request {
                 Payment payment1 = new Payment(id, amount, date, gateway, status, currency, email, name, uuid, packageList);
 
                 payments.add(payment1);
-            }catch (Exception e){
+            } catch (Exception e) {
                 buyCraftAPI.getLogger().info("Error: " + e.getMessage());
             }
 
@@ -140,64 +146,56 @@ public class Request {
         return payments;
     }
 
-    public CompletableFuture<JSONObject> getPaymentsByPage(int page) {
-        return CompletableFuture.supplyAsync(() -> {
+    public CompletableFuture<JsonObject> getPaymentsByPage2(int page) {
+        CompletableFuture<JsonObject> completableFuture = new CompletableFuture<>();
 
+        String url = constructURL(page);
 
-            String url = "https://plugin.tebex.io/payments?paged=1&page=" + page;
+        okhttp3.Request request = new okhttp3.Request.Builder()
+                .url(url)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("X-Tebex-Secret", secret)
+                .build();
 
+        client.newCall(request).enqueue(new okhttp3.Callback() {
 
-            HttpURLConnection con = null;
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.code() == 200) {
 
-            try {
-                con = (HttpURLConnection) URI.create(url).toURL().openConnection();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+                    if (response.body() == null) {
+                        completableFuture.completeExceptionally(new Exception("Error: " + response.code()));
+                        return;
+                    }
 
-            try {
-                con.setRequestMethod("GET");
-            } catch (ProtocolException e) {
-                throw new RuntimeException(e);
-            }
-
-            con.setRequestProperty("Content-Type", "application/json");
-
-            con.setRequestProperty("X-Tebex-Secret", secret);
-
-            con.setDoOutput(true);
-
-            try {
-                con.connect();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            JSONObject json;
-
-            try (BufferedReader br = new BufferedReader(
-                    new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
-                StringBuilder response = new StringBuilder();
-                String responseLine = null;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
+                    String body = response.body().string();
+                    JsonObject json = gson.fromJson(body, JsonObject.class);
+                    completableFuture.complete(json);
+                } else if (response.code() == 429) {
+                    completableFuture.completeExceptionally(new Exception("Rate Limit Exception: " + response.code() + " - " + response.message()));
+                } else {
+                    completableFuture.completeExceptionally(new Exception("Error: " + response.code()));
                 }
-                json = new JSONObject(response.toString());
-            } catch (IOException | JSONException e) {
-                throw new RuntimeException(e);
             }
 
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                completableFuture.completeExceptionally(e);
+            }
+        });
 
-            return json;
-        }, buyCraftAPI.getQuery().getExecutorService());
+        return completableFuture;
+    }
+
+    private String constructURL(int page) {
+        return "https://plugin.tebex.io/payments?paged=1&page=" + page;
     }
 
     public UUID convertUUID(String uuid) {
         return java.util.UUID.fromString(
-                uuid
-                        .replaceFirst(
-                                "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"
-                        )
+                uuid.replaceFirst(
+                        "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"
+                )
         );
     }
 

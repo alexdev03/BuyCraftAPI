@@ -25,13 +25,13 @@ import java.util.logging.Logger;
 @Getter
 public class BuyCraftAPI extends PlaceholderExpansion {
 
-    private final Vault vault;
+    private Vault vault;
     private Permission perms = null;
 
     private final Request request;
-    private final Placeholders placeholdersIstance;
+    private Placeholders placeholdersIstance;
     private final Query query;
-    private final Logger logger;
+    private Logger logger;
 
     public BuyCraftAPI() {
         BuycraftPlugin plugin = BuycraftPlugin.getPlugin(BuycraftPlugin.class);
@@ -41,6 +41,12 @@ public class BuyCraftAPI extends PlaceholderExpansion {
         query = new Query(this);
 
         JavaPlugin placeholderAPI = (JavaPlugin) Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
+
+        if (placeholderAPI == null) {
+            getLogger().log(Level.SEVERE, "Could not find PlaceholderAPI! Disabling plugin...");
+            unregister();
+            return;
+        }
 
         int pluginId = 10173;
         Metrics metrics = new Metrics(placeholderAPI, pluginId);
@@ -61,7 +67,6 @@ public class BuyCraftAPI extends PlaceholderExpansion {
         }));
 
 
-
         vault = (Vault) Bukkit.getServer().getPluginManager().getPlugin("Vault");
 
         vaultHook();
@@ -75,7 +80,7 @@ public class BuyCraftAPI extends PlaceholderExpansion {
     public boolean canRegister() {
         BuycraftPlugin plugin = BuycraftPlugin.getPlugin(BuycraftPlugin.class);
 
-        if(plugin.getConfiguration().getServerKey()==null || plugin.getConfiguration().getServerKey().isEmpty() || plugin.getConfiguration().getServerKey().equals("INVALID")) {
+        if (plugin.getConfiguration().getServerKey() == null || plugin.getConfiguration().getServerKey().isEmpty() || plugin.getConfiguration().getServerKey().equals("INVALID")) {
             logger.severe("Server key is not set. Please set it in the BuyCraft config.yml");
             return false;
         }
@@ -110,7 +115,6 @@ public class BuyCraftAPI extends PlaceholderExpansion {
     }
 
 
-
     private void vaultHook() {
         if (vault != null) {
             if (setupPermissions()) {
@@ -121,15 +125,15 @@ public class BuyCraftAPI extends PlaceholderExpansion {
 
 
     private boolean setupPermissions() {
-        RegisteredServiceProvider<Permission> rsp = Bukkit.getServer().getServicesManager().getRegistration(Permission.class);
-        perms = rsp.getProvider();
-        return perms != null;
+        try {
+            RegisteredServiceProvider<Permission> rsp = Bukkit.getServer().getServicesManager().getRegistration(Permission.class);
+            if (rsp == null) return false;
+            perms = rsp.getProvider();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
-
-
-
-
-    
 
 
 }

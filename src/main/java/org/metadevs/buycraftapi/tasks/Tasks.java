@@ -9,13 +9,11 @@ public class Tasks {
 
     private final BuyCraftAPI buyCraftAPI;
     private final Plugin placeholderapi;
-    private final PlaceholderAPIPlugin papi;
 
 
     public Tasks(BuyCraftAPI buyCraftAPI, Plugin placeholderapi) {
         this.buyCraftAPI = buyCraftAPI;
         this.placeholderapi = placeholderapi;
-        papi = (PlaceholderAPIPlugin) placeholderapi;
         loadAPITask();
     }
 
@@ -25,18 +23,22 @@ public class Tasks {
         new BukkitRunnable() {
             @Override
             public void run() {
+
+                if(!buyCraftAPI.isRegistered()) {
+                    return;
+                }
+
                 long start = System.currentTimeMillis();
+                buyCraftAPI.getLogger().info("Loading payments...");
                 buyCraftAPI.getQuery().loadPayments().thenAccept(success -> {
                     if (success) {
                         long end = System.currentTimeMillis();
                         buyCraftAPI.getLogger().info("Successfully loaded payments in " + (end - start) + "ms");
                     } else {
                         buyCraftAPI.getLogger().info("Failed to load payments");
-                        cancel();
                     }
                 }).exceptionally(throwable -> {
-                    throwable.printStackTrace();
-                    cancel();
+                    buyCraftAPI.getLogger().log(java.util.logging.Level.SEVERE, "Failed to load payments", throwable);
                     return null;
                 });
             }

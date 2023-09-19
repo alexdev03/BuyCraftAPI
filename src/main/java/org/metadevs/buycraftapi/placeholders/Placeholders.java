@@ -51,7 +51,7 @@ public class Placeholders {
 
 
             if(Bukkit.isPrimaryThread()){
-                return "This placeholder is not supported in the main thread";
+                return "This placeholder is not supported on the main thread";
             }
 
 
@@ -79,7 +79,7 @@ public class Placeholders {
 
         if (identifier.contains("recent_currency_")) {
             String replace = identifier.replace("recent_currency_", "");
-            if (query.checkNumExeption(replace)) return "Invalid number";
+            if (query.isNotNumeric(replace)) return "Invalid number";
             int num = Integer.parseInt(replace);
 
             if (maxPayments == 0) return "Payments could not be found";
@@ -93,7 +93,7 @@ public class Placeholders {
 
         if (identifier.contains("recent_amount_")) {
             String replace = identifier.replace("recent_amount_", "");
-            if (query.checkNumExeption(replace)) return "Invalid number";
+            if (query.isNotNumeric(replace)) return "Invalid number";
             int num = Integer.parseInt(replace);
             if (maxPayments == 0) return "Payments could not be found";
             if (num > maxPayments - 1 || num < 0)
@@ -119,7 +119,7 @@ public class Placeholders {
 
         if (identifier.contains("top_donor_global_name_")) {
             String replace = identifier.replace("top_donor_global_name_", "");
-            if (query.checkNumExeption(replace)) return "Error, Invalid number";
+            if (query.isNotNumeric(replace)) return "Error, Invalid number";
             int num = Integer.parseInt(replace);
             TopValue payment = query.getTop(GLOBAL, num);
             if (payment == null) return "Error";
@@ -130,7 +130,7 @@ public class Placeholders {
 
         if (identifier.contains("top_donor_monthly_name_")) {
             String replace = identifier.replace("top_donor_monthly_name_", "");
-            if (query.checkNumExeption(replace)) return "Error, Invalid number";
+            if (query.isNotNumeric(replace)) return "Error, Invalid number";
             int num = Integer.parseInt(replace);
             TopValue payment = query.getTop(MONTHLY, num);
             if (payment == null) return "Error";
@@ -142,7 +142,7 @@ public class Placeholders {
 
         if (identifier.contains("top_donor_current_month_name_")) {
             String replace = identifier.replace("top_donor_current_month_name_", "");
-            if (query.checkNumExeption(replace)) return "Error, Invalid number";
+            if (query.isNotNumeric(replace)) return "Error, Invalid number";
             int num = Integer.parseInt(replace);
             TopValue payment = query.getTop(CURRENT_MONTH, num);
             if (payment == null) return "Error";
@@ -164,6 +164,20 @@ public class Placeholders {
         if (identifier.contains("top_donor_current_month_amount_")) {
             String replace = identifier.replace("top_donor_current_month_amount_", "");
             return getPrice(replace, CURRENT_MONTH);
+        }
+
+        if(identifier.equalsIgnoreCase("top_donor_global_value")){
+            return query.getTotalValue(GLOBAL);
+        }
+
+        System.out.println(identifier);
+
+        if(identifier.equalsIgnoreCase("top_donor_monthly_value")){
+            return query.getTotalValue(MONTHLY);
+        }
+
+        if(identifier.equalsIgnoreCase("top_donor_current_month_value")){
+            return query.getTotalValue(CURRENT_MONTH);
         }
 
         if (identifier.equalsIgnoreCase("total_earnings_global")) {
@@ -209,7 +223,7 @@ public class Placeholders {
     }
 
     private String getVaultTop(String replace, Type currentMonth) {
-        if (query.checkNumExeption(replace)) return "Error, Invalid number";
+        if (query.isNotNumeric(replace)) return "Error, Invalid number";
         int num = Integer.parseInt(replace);
 
         if(Bukkit.isPrimaryThread()){
@@ -225,7 +239,7 @@ public class Placeholders {
     }
 
     private String getPrice(String replace, Type monthly) {
-        if (query.checkNumExeption(replace)) return "Error, Invalid number";
+        if (query.isNotNumeric(replace)) return "Error, Invalid number";
         int num = Integer.parseInt(replace);
         TopValue payment = query.getTop(monthly, num);
         if (payment == null) return "Error";

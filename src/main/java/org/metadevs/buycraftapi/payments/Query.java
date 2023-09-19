@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @Getter
 public class Query {
@@ -82,29 +83,6 @@ public class Query {
         return String.format("%.2f", total);
     }
 
-    public String getPlayerFromTop(Type top, int position) {
-        switch (top) {
-            case GLOBAL: {
-                if (payments.size() > position) {
-
-                    return payments.get(position).getName();
-                }
-            }
-            case MONTHLY: {
-                if (monthlyPayments.size() > position) {
-                    return monthlyPayments.get(position).getName();
-                }
-            }
-            case CURRENT_MONTH: {
-                if (currentMonthPayments.size() > position) {
-                    return currentMonthPayments.get(position).getName();
-                }
-            }
-            default:
-                return null;
-        }
-    }
-
     public TopValue getTop(Type type, int position) {
         switch (type) {
             case GLOBAL: {
@@ -151,7 +129,6 @@ public class Query {
         sortedMap.putAll(map);
 
         if (position > sortedMap.size()) {
-//            buyCraftAPI.getLogger().severe("Position " + position + " is bigger than the size of the map " + sortedMap.size());
             return null;
         }
 
@@ -168,33 +145,9 @@ public class Query {
 
         String name = payment.get().getName();
 
-//        buyCraftAPI.getLogger().info("Top " + position + " " + name + " " + amount);
-
         return new TopValue(name, uuid, amount);
     }
 
-
-    public double getValueFromTop(Type top, int position) {
-        switch (top) {
-            case GLOBAL: {
-                if (payments.size() > position) {
-                    return payments.get(position).getAmount();
-                }
-            }
-            case MONTHLY: {
-                if (monthlyPayments.size() > position) {
-                    return monthlyPayments.get(position).getAmount();
-                }
-            }
-            case CURRENT_MONTH: {
-                if (currentMonthPayments.size() > position) {
-                    return currentMonthPayments.get(position).getAmount();
-                }
-            }
-            default:
-                return -1;
-        }
-    }
 
     public double getAllMoneySpent(Type type) {
         double amount = 0D;
@@ -222,55 +175,11 @@ public class Query {
     }
 
 
-    public String getNameWanted(HashMap<String, Double> values, int num) {
-        List<Double> test = sortMap(values);
-        Double doubleval = test.get(num);
-        return getNameFromValue(values, doubleval);
-    }
-
-
-    public String getCurrencyWanted(HashMap<String, String> currency, HashMap<String, Double> values, int num) {
-        return getCurrencyFromName(currency, getNameWanted(values, num));
-    }
-
-    public String getPriceWanted(HashMap<String, Double> values, int num) {
-        return getTotalPrice(values, getNameWanted(values, num));
-    }
-
-    public String getNameFromValue(HashMap<String, Double> values, Double val) {
-        for (String name : values.keySet()) {
-            if (val.equals(values.get(name))) {
-                return name;
-            }
-        }
-        return null;
-    }
-
-    public String getCurrencyFromName(HashMap<String, String> currency, String playername) {
-        for (String name : currency.keySet()) {
-            if (name.equalsIgnoreCase(playername)) {
-                return currency.get(name);
-            }
-        }
-        return null;
-    }
-
-    public String getTotalPrice(HashMap<String, Double> values, String playername) {
-        for (String name : values.keySet()) {
-            if (name.equalsIgnoreCase(playername)) {
-                return String.valueOf(values.get(name));
-            }
-        }
-        return null;
-    }
-
-
     public Payment getRecentPayment(int position) {
         if (payments.size() > position) {
             List<Payment> paymentList = new ArrayList<>(payments);
             paymentList.sort(Comparator.comparing(Payment::getDate));
             Collections.reverse(paymentList);
-//            buyCraftAPI.getLogger().info("Recent payment " + paymentList.get(position).getName() + " " + paymentList.get(position).getAmount());
             return paymentList.get(position);
         }
         buyCraftAPI.getLogger().severe("Position " + position + " is bigger than the size of the list " + payments.size());
@@ -278,7 +187,7 @@ public class Query {
     }
 
 
-    public boolean checkNumExeption(String num) {
+    public boolean isNotNumeric(String num) {
 
         try {
             Integer.parseInt(num);
@@ -296,21 +205,41 @@ public class Query {
         return bd.doubleValue();
     }
 
-    public static List<Double> sortMap(HashMap<String, Double> values) {
-        List<Double> test1 = new ArrayList<>(values.values());
-        Collections.sort(test1);
-        Collections.reverse(test1);
-        List<Double> croce = new ArrayList<>();
-        for (Double data : test1) {
-            for (String data2 : values.keySet()) {
-                if (data.equals(values.get(data2)) && !croce.contains(data)) {
-                    croce.add(data);
-                }
-            }
+    public String getTotalValue(Type type) {
+        switch (type) {
+            case GLOBAL:
+                return findTop(payments);
+            case MONTHLY:
+                return findTop(monthlyPayments);
+            case CURRENT_MONTH:
+                return findTop(currentMonthPayments);
+            default:
+                return "N/A";
+        }
+    }
+
+    private String findTop(List<Payment> payments) {
+        if (payments == null || payments.isEmpty()) {
+            return "N/A";
         }
 
+        Map<UUID, Double> map = payments.stream()
+                .collect(Collectors.groupingBy(Payment::getUuid, Collectors.summingDouble(Payment::getAmount)));
 
-        return croce;
+        Optional<UUID> uuidOptional = map.entrySet().stream()
+                .max(Comparator.comparingDouble(Map.Entry::getValue))
+                .map(Map.Entry::getKey);
 
+        if (!uuidOptional.isPresent()) {
+            return "N/A";
+        }
+
+        UUID uuid = uuidOptional.get();
+
+        return payments.stream()
+                .filter(p -> p.getUuid().equals(uuid))
+                .findFirst()
+                .map(Payment::getName)
+                .orElseThrow(() -> new NoSuchElementException("Payment not found for uuid " + uuid));
     }
 }
