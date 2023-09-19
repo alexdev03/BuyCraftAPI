@@ -11,9 +11,9 @@ This document provides a comprehensive explanation of the placeholders available
 - `%buycraftAPI_recent_amount_<number>%`: Retrieve the amount of the recent purchase for a specific slot number.
 
 ### Top Donors:
-- `%buycraftAPI_top_donor_monthly_value%`: Retrieve the value of the top donor for the current month.
-- `%buycraftAPI_top_donor_current_month_value%`: Retrieve the value of the top donor for the current month.
-- `%buycraftAPI_top_donor_global_value%`: Retrieve the value of the global top donor.
+- `%buycraftAPI_top_donor_monthly_name%`: Retrieve the name of the top donor for the current month.
+- `%buycraftAPI_top_donor_current_month_name%`: Retrieve the name of the top donor for the current month.
+- `%buycraftAPI_top_donor_global_name%`: Retrieve the name of the global top donor.
 
 ### Earnings:
 - `%buycraftAPI_total_earnings_global%`: Retrieve the total earnings globally.
