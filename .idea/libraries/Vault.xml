@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Vault">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../QuestWorld-1.16/libraries/Vault.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
