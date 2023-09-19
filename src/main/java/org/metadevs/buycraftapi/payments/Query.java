@@ -205,7 +205,7 @@ public class Query {
         return bd.doubleValue();
     }
 
-    public String getTotalValue(Type type) {
+    public String getTopDonorName(Type type) {
         switch (type) {
             case GLOBAL:
                 return findTop(payments);

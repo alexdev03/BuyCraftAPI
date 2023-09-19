@@ -166,18 +166,16 @@ public class Placeholders {
             return getPrice(replace, CURRENT_MONTH);
         }
 
-        if(identifier.equalsIgnoreCase("top_donor_global_value")){
-            return query.getTotalValue(GLOBAL);
+        if(identifier.equalsIgnoreCase("top_donor_global_name")){
+            return query.getTopDonorName(GLOBAL);
         }
 
-        System.out.println(identifier);
-
-        if(identifier.equalsIgnoreCase("top_donor_monthly_value")){
-            return query.getTotalValue(MONTHLY);
+        if(identifier.equalsIgnoreCase("top_donor_monthly_name")){
+            return query.getTopDonorName(MONTHLY);
         }
 
-        if(identifier.equalsIgnoreCase("top_donor_current_month_value")){
-            return query.getTotalValue(CURRENT_MONTH);
+        if(identifier.equalsIgnoreCase("top_donor_current_month_name")){
+            return query.getTopDonorName(CURRENT_MONTH);
         }
 
         if (identifier.equalsIgnoreCase("total_earnings_global")) {
