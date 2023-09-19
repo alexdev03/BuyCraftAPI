@@ -70,4 +70,4 @@ This expansion can be installed in two ways:
     - `/papi reload`: Reloads PlaceholderAPI to make the expansion available.
 
 ## Contact Information
-For further assistance or inquiries, you can contact AlexDev03 on Discord: `AlexDev03#0000`.
+For further assistance or inquiries, you can contact AlexDev03 on Discord: `AlexDev03`.
