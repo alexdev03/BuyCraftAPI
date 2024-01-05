@@ -1,28 +1,24 @@
 package org.metadevs.buycraftapi.data;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Getter
-@AllArgsConstructor
-@ToString
+@Data
 public class Payment {
 
-    private int id;
-    private double amount;
-    private LocalDateTime date;
-    private String gateway;
-    private String status;
-    private String currency;
-    private String email;
-    private String name;
-    private UUID uuid;
-    private List<Package> packages;
+    private final int id;
+    private final double amount;
+    private final LocalDateTime date;
+    private final String gateway;
+    private final String status;
+    private final String currency;
+    private final String email;
+    private final String name;
+    private final UUID uuid;
+    private final List<Package> packages;
 
 
 }

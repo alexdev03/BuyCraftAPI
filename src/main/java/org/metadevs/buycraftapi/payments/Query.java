@@ -35,6 +35,10 @@ public class Query {
         this.executorService = Executors.newFixedThreadPool(25);
     }
 
+    public void close() {
+        executorService.shutdown();
+    }
+
     public CompletableFuture<Boolean> loadPayments() {
         return buyCraftAPI.getRequest().getAllPayments().thenApply(payments -> {
 

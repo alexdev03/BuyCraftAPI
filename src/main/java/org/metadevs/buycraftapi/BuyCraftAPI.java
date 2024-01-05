@@ -2,12 +2,11 @@ package org.metadevs.buycraftapi;
 
 import lombok.Getter;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import net.buycraft.plugin.bukkit.BuycraftPlugin;
+import me.clip.placeholderapi.expansion.Taskable;
 import net.milkbowl.vault.Vault;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +14,9 @@ import org.metadevs.buycraftapi.data.Request;
 import org.metadevs.buycraftapi.metrics.Metrics;
 import org.metadevs.buycraftapi.payments.Query;
 import org.metadevs.buycraftapi.placeholders.Placeholders;
+import org.metadevs.buycraftapi.providers.BuyCraftXProvider;
+import org.metadevs.buycraftapi.providers.Provider;
+import org.metadevs.buycraftapi.providers.TebexProvider;
 import org.metadevs.buycraftapi.tasks.Tasks;
 
 import java.util.HashMap;
@@ -23,73 +25,45 @@ import java.util.logging.Logger;
 
 
 @Getter
-public class BuyCraftAPI extends PlaceholderExpansion {
+public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
 
     private Vault vault;
     private Permission perms = null;
-
-    private final Request request;
+    private Request request;
     private Placeholders placeholdersIstance;
-    private final Query query;
+    private Query query;
     private Logger logger;
+    private Provider provider;
 
-    public BuyCraftAPI() {
-        BuycraftPlugin plugin = BuycraftPlugin.getPlugin(BuycraftPlugin.class);
-
-        request = new Request(plugin.getConfiguration().getServerKey(), this);
-
-        query = new Query(this);
-
-        JavaPlugin placeholderAPI = (JavaPlugin) Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
-
-        if (placeholderAPI == null) {
-            getLogger().log(Level.SEVERE, "Could not find PlaceholderAPI! Disabling plugin...");
-            unregister();
-            return;
+    private Provider getProvider() {
+        if (Bukkit.getPluginManager().isPluginEnabled("BuycraftX")) {
+            getLogger().log(Level.INFO, "BuycraftX found! Using it...");
+            return new BuyCraftXProvider();
+        } else if (Bukkit.getPluginManager().isPluginEnabled("Tebex")) {
+            getLogger().log(Level.INFO, "Tebex found! Using it...");
+            return new TebexProvider();
+        } else {
+            throw new IllegalStateException("No supported plugin found");
         }
-
-        int pluginId = 10173;
-        Metrics metrics = new Metrics(placeholderAPI, pluginId);
-
-        logger = Logger.getLogger("BuycraftAPI");
-
-
-        if (metrics.getMetricsBase().isEnabled())
-            getLogger().log(Level.INFO, "Successfully connected to bstats");
-        else
-            getLogger().log(Level.WARNING, "Could not connect to bstats! Enable it in bstats folder in plugins folder.");
-
-        metrics.addCustomChart(new Metrics.MultiLineChart("players_and_servers", () -> {
-            HashMap<String, Integer> valueMap = new HashMap<>();
-            valueMap.put("servers", 1);
-            valueMap.put("players", Bukkit.getOnlinePlayers().size());
-            return valueMap;
-        }));
-
-
-        vault = (Vault) Bukkit.getServer().getPluginManager().getPlugin("Vault");
-
-        vaultHook();
-
-        placeholdersIstance = new Placeholders(this);
-
     }
 
 
     @Override
     public boolean canRegister() {
-        BuycraftPlugin plugin = BuycraftPlugin.getPlugin(BuycraftPlugin.class);
+        logger = Logger.getLogger("BuycraftAPI");
+        provider = getProvider();
 
-        if (plugin.getConfiguration().getServerKey() == null || plugin.getConfiguration().getServerKey().isEmpty() || plugin.getConfiguration().getServerKey().equals("INVALID")) {
-            logger.severe("Server key is not set. Please set it in the BuyCraft config.yml");
-            return false;
+        final String key = provider.getKey();
+        final JavaPlugin placeholderAPI = (JavaPlugin) Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
+
+        if (placeholderAPI == null) {
+            throw new IllegalStateException("Could not find PlaceholderAPI!");
         }
 
-        Plugin placeholderAPI = Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
-
-
-        new Tasks(this, placeholderAPI);
-
+        if (key == null || key.isEmpty() || key.equals("INVALID")) {
+            logger.severe("Server key is not set. Please set it in the BuyCraft/Tebex config.yml");
+            return false;
+        }
 
         return true;
     }
@@ -106,7 +80,7 @@ public class BuyCraftAPI extends PlaceholderExpansion {
 
 
     public @NotNull String getVersion() {
-        return "4.2";
+        return "4.3";
     }
 
     @Override
@@ -136,4 +110,47 @@ public class BuyCraftAPI extends PlaceholderExpansion {
     }
 
 
+    @Override
+    public void start() {
+        final JavaPlugin placeholderAPI = (JavaPlugin) Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
+
+        if (placeholderAPI == null) {
+            throw new IllegalStateException("Could not find PlaceholderAPI!");
+        }
+
+        new Tasks(this, placeholderAPI);
+
+        request = new Request(provider.getKey(), this);
+
+        query = new Query(this);
+
+        int pluginId = 10173;
+        final Metrics metrics = new Metrics(placeholderAPI, pluginId);
+
+
+
+        if (metrics.getMetricsBase().isEnabled())
+            getLogger().log(Level.INFO, "Successfully connected to bstats");
+        else
+            getLogger().log(Level.WARNING, "Could not connect to bstats! Enable it in bstats folder in plugins folder.");
+
+        metrics.addCustomChart(new Metrics.MultiLineChart("players_and_servers", () -> {
+            HashMap<String, Integer> valueMap = new HashMap<>();
+            valueMap.put("servers", 1);
+            valueMap.put("players", Bukkit.getOnlinePlayers().size());
+            return valueMap;
+        }));
+
+
+        vault = (Vault) Bukkit.getServer().getPluginManager().getPlugin("Vault");
+
+        vaultHook();
+
+        placeholdersIstance = new Placeholders(this);
+    }
+
+    @Override
+    public void stop() {
+        query.close();
+    }
 }
