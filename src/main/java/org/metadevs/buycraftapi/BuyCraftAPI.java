@@ -80,7 +80,7 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
 
 
     public @NotNull String getVersion() {
-        return "4.3";
+        return "4.6";
     }
 
     @Override
