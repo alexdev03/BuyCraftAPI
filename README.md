@@ -1,5 +1,7 @@
 # Placeholder Expansion for Tebex
 
+This versions is made for papi ecloud as it doesn't contain metrics.
+
 This document provides a comprehensive explanation of the placeholders available for Tebex integration. These placeholders enable the retrieval of various information regarding recent purchases, top donors, earnings, and more.
 
 ## Placeholders
