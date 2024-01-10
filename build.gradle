@@ -26,6 +26,7 @@ repositories {
 dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 
+    compileOnly("org.bstats:bstats-bukkit:3.0.1")
     compileOnly 'org.spigotmc:spigot-api:1.16.5-R0.1-SNAPSHOT'
     compileOnly 'com.github.milkbowl:vault:1.7.3'
     compileOnly 'me.clip:placeholderapi:2.11.3'
@@ -39,7 +40,11 @@ dependencies {
 }
 
 shadowJar {
-    relocate('com.squareup.okhttp3', 'org.metadevs.buycraftapi.libraries.okhttp3')
+    relocate('okhttp3', 'org.metadevs.buycraftapi.libraries.okhttp3')
+    relocate('okio', 'org.metadevs.buycraftapi.libraries.okio')
+    relocate('kotlin', 'org.metadevs.buycraftapi.libraries.kotlin')
+    relocate("org.bstats", "me.clip.placeholderapi.metrics")
+    relocate('org.jetbrains.annotations', 'org.metadevs.buycraftapi.libraries.jetbrains.annotations')
 
     minimize()
 }

@@ -23,6 +23,8 @@ import static java.lang.Thread.sleep;
 
 public class Request {
 
+    public static final int MAX_REQUESTS = 500;
+    public static final int PERIOD = 300;
     private final List<Package> packages;
     private final String secret;
     private final BuyCraftAPI buyCraftAPI;
@@ -62,11 +64,20 @@ public class Request {
                 return payments;
             }
 
+            int requests = 1;
+
             for (int i = 2; i <= finalPage; i++) {
                 List<Payment> pays;
                 try {
                     pays = getPayment(getPaymentsByPage2(i).get(5, TimeUnit.SECONDS));
-                    sleep(1200);
+//                    sleep(1200);
+                    sleep(20);
+                    requests++;
+                    if (requests >= MAX_REQUESTS - 1) {
+                        requests = 0;
+                        buyCraftAPI.getLogger().info("Waiting " + PERIOD + " seconds to avoid rate limit");
+                        sleep(PERIOD);
+                    }
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
                     buyCraftAPI.getLogger().info("Error: " + e.getMessage());
                     continue;

@@ -3,6 +3,8 @@ package org.metadevs.buycraftapi;
 import lombok.Getter;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.clip.placeholderapi.expansion.Taskable;
+import me.clip.placeholderapi.metrics.bukkit.Metrics;
+import me.clip.placeholderapi.metrics.charts.MultiLineChart;
 import net.milkbowl.vault.Vault;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
@@ -11,7 +13,6 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.metadevs.buycraftapi.data.Request;
-import org.metadevs.buycraftapi.metrics.Metrics;
 import org.metadevs.buycraftapi.payments.Query;
 import org.metadevs.buycraftapi.placeholders.Placeholders;
 import org.metadevs.buycraftapi.providers.BuyCraftXProvider;
@@ -127,25 +128,15 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
         int pluginId = 10173;
         final Metrics metrics = new Metrics(placeholderAPI, pluginId);
 
-
-
-        if (metrics.getMetricsBase().isEnabled())
-            getLogger().log(Level.INFO, "Successfully connected to bstats");
-        else
-            getLogger().log(Level.WARNING, "Could not connect to bstats! Enable it in bstats folder in plugins folder.");
-
-        metrics.addCustomChart(new Metrics.MultiLineChart("players_and_servers", () -> {
+        metrics.addCustomChart(new MultiLineChart("players_and_servers", () -> {
             HashMap<String, Integer> valueMap = new HashMap<>();
             valueMap.put("servers", 1);
             valueMap.put("players", Bukkit.getOnlinePlayers().size());
             return valueMap;
         }));
 
-
         vault = (Vault) Bukkit.getServer().getPluginManager().getPlugin("Vault");
-
         vaultHook();
-
         placeholdersIstance = new Placeholders(this);
     }
 
