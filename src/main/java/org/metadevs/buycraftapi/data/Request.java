@@ -41,9 +41,7 @@ public class Request {
 
     public CompletableFuture<List<Payment>> getAllPayments() {
         return CompletableFuture.supplyAsync(() -> {
-
             JsonObject response;
-
             long start = System.currentTimeMillis();
 
             try {
@@ -52,25 +50,23 @@ public class Request {
                 throw new RuntimeException(e);
             }
 
-            int finalPage = response.get("last_page").getAsInt();
-
-            long total = response.get("total").getAsLong();
+            final int finalPage = response.get("last_page").getAsInt();
+            final long total = response.get("total").getAsLong();
 
             buyCraftAPI.getLogger().info("Loading " + total + " payments..." + " Pages: " + finalPage);
 
-            List<Payment> payments = new CopyOnWriteArrayList<>(getPayment(response));
+            final List<Payment> totalPayments = new CopyOnWriteArrayList<>(getPayment(response));
+            buyCraftAPI.getLogger().info("Loaded " + totalPayments.size() + " payments of " + total + ". Page " + 1 + " of " + finalPage);
 
             if (finalPage <= 1) {
-                return payments;
+                return totalPayments;
             }
 
             int requests = 1;
-
             for (int i = 2; i <= finalPage; i++) {
-                List<Payment> pays;
+                List<Payment> payments;
                 try {
-                    pays = getPayment(getPaymentsByPage2(i).get(5, TimeUnit.SECONDS));
-//                    sleep(1200);
+                    payments = getPayment(getPaymentsByPage2(i).get(5, TimeUnit.SECONDS));
                     sleep(20);
                     requests++;
                     if (requests >= MAX_REQUESTS - 1) {
@@ -83,58 +79,48 @@ public class Request {
                     continue;
                 }
 
-                payments.addAll(pays);
-                buyCraftAPI.getLogger().info("Loaded " + payments.size() + " payments of " + total + ". Page " + i + " of " + finalPage);
+                totalPayments.addAll(payments);
+                buyCraftAPI.getLogger().info("Loaded " + totalPayments.size() + " payments of " + total + ". Page " + i + " of " + finalPage);
             }
 
-            buyCraftAPI.getLogger().info("Loaded " + payments.size() + " payments of " + total + " in " + (System.currentTimeMillis() - start) + "ms");
+            buyCraftAPI.getLogger().info("Loaded " + totalPayments.size() + " payments of " + total + " in " + (System.currentTimeMillis() - start) + "ms");
+            buyCraftAPI.getLogger().info((total - totalPayments.size()) + " were not loaded as they are manual payments");
 
-            return payments;
-
+            return totalPayments;
         }, buyCraftAPI.getQuery().getExecutorService());
     }
 
     public List<Payment> getPayment(JsonObject jsonObject) {
 
-        JsonArray array = jsonObject.getAsJsonArray("data");
-        List<Payment> payments = new ArrayList<>();
+        final JsonArray array = jsonObject.getAsJsonArray("data");
+        final List<Payment> payments = new ArrayList<>();
 
         for (JsonElement payment : array) {
             try {
-                JsonObject paymentObject = payment.getAsJsonObject();
-
-                int id = paymentObject.get("id").getAsInt();
-
-                String status = paymentObject.get("status").getAsString();
+                final JsonObject paymentObject = payment.getAsJsonObject();
+                final int id = paymentObject.get("id").getAsInt();
+                final String status = paymentObject.get("status").getAsString();
 
                 if (!status.equals("Complete")) {
                     continue;
                 }
 
-                double amount = paymentObject.get("amount").getAsDouble();
-
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
-                LocalDateTime date = LocalDateTime.parse(paymentObject.get("date").getAsString(), formatter);
-
-
-                String email = paymentObject.get("email").getAsString();
-
-                String gateway = paymentObject.getAsJsonObject("gateway").get("name").getAsString();
-
-                String currency = paymentObject.getAsJsonObject("currency").get("iso_4217").getAsString();
-
-                UUID uuid = convertUUID(paymentObject.getAsJsonObject("player").get("uuid").getAsString());
-                String name = paymentObject.getAsJsonObject("player").get("name").getAsString();
-
-                List<Package> packageList = new ArrayList<>();
-                JsonArray packages = paymentObject.getAsJsonArray("packages");
+                final double amount = paymentObject.get("amount").getAsDouble();
+                final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+                final LocalDateTime date = LocalDateTime.parse(paymentObject.get("date").getAsString(), formatter);
+                final String email = paymentObject.get("email").getAsString();
+                final String gateway = paymentObject.getAsJsonObject("gateway").get("name").getAsString();
+                final String currency = paymentObject.getAsJsonObject("currency").get("iso_4217").getAsString();
+                final UUID uuid = convertUUID(paymentObject.getAsJsonObject("player").get("uuid").getAsString());
+                final String name = paymentObject.getAsJsonObject("player").get("name").getAsString();
+                final List<Package> packageList = new ArrayList<>();
+                final JsonArray packages = paymentObject.getAsJsonArray("packages");
 
                 for (JsonElement packageObject : packages) {
-                    JsonObject pack = packageObject.getAsJsonObject();
-                    int idPack = pack.get("id").getAsInt();
-                    String namePack = pack.get("name").getAsString();
-
-                    Optional<Package> optional = this.packages.stream().filter(p -> p.getId() == idPack).findFirst();
+                    final JsonObject pack = packageObject.getAsJsonObject();
+                    final int idPack = pack.get("id").getAsInt();
+                    final String namePack = pack.get("name").getAsString();
+                    final Optional<Package> optional = this.packages.stream().filter(p -> p.getId() == idPack).findFirst();
 
                     if (optional.isPresent()) {
                         packageList.add(optional.get());
@@ -145,9 +131,8 @@ public class Request {
                     }
                 }
 
-                Payment payment1 = new Payment(id, amount, date, gateway, status, currency, email, name, uuid, packageList);
-
-                payments.add(payment1);
+                final Payment currentPayment = new Payment(id, amount, date, gateway, status, currency, email, name, uuid, packageList);
+                payments.add(currentPayment);
             } catch (Exception e) {
                 buyCraftAPI.getLogger().info("Error: " + e.getMessage());
             }
@@ -158,11 +143,9 @@ public class Request {
     }
 
     public CompletableFuture<JsonObject> getPaymentsByPage2(int page) {
-        CompletableFuture<JsonObject> completableFuture = new CompletableFuture<>();
-
-        String url = constructURL(page);
-
-        okhttp3.Request request = new okhttp3.Request.Builder()
+        final CompletableFuture<JsonObject> completableFuture = new CompletableFuture<>();
+        final String url = constructURL(page);
+        final okhttp3.Request request = new okhttp3.Request.Builder()
                 .url(url)
                 .addHeader("Content-Type", "application/json")
                 .addHeader("X-Tebex-Secret", secret)
@@ -179,8 +162,8 @@ public class Request {
                         return;
                     }
 
-                    String body = response.body().string();
-                    JsonObject json = gson.fromJson(body, JsonObject.class);
+                    final String body = response.body().string();
+                    final JsonObject json = gson.fromJson(body, JsonObject.class);
                     completableFuture.complete(json);
                 } else if (response.code() == 429) {
                     completableFuture.completeExceptionally(new Exception("Rate Limit Exception: " + response.code() + " - " + response.message()));

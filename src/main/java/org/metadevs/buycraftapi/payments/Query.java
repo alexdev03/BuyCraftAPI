@@ -1,6 +1,7 @@
 package org.metadevs.buycraftapi.payments;
 
 
+import com.google.common.collect.Lists;
 import lombok.Getter;
 import org.metadevs.buycraftapi.BuyCraftAPI;
 import org.metadevs.buycraftapi.data.Payment;
@@ -29,9 +30,9 @@ public class Query {
 
     public Query(BuyCraftAPI buyCraftAPI) {
         this.buyCraftAPI = buyCraftAPI;
-        this.payments = new CopyOnWriteArrayList<>();
-        this.monthlyPayments = new CopyOnWriteArrayList<>();
-        this.currentMonthPayments = new CopyOnWriteArrayList<>();
+        this.payments = Lists.newCopyOnWriteArrayList();
+        this.monthlyPayments = Lists.newCopyOnWriteArrayList();
+        this.currentMonthPayments = Lists.newCopyOnWriteArrayList();
         this.executorService = Executors.newFixedThreadPool(25);
     }
 
@@ -88,19 +89,11 @@ public class Query {
     }
 
     public TopValue getTop(Type type, int position) {
-        switch (type) {
-            case GLOBAL: {
-                return getTop(payments, position);
-            }
-            case MONTHLY: {
-                return getTop(monthlyPayments, position);
-            }
-            case CURRENT_MONTH: {
-                return getTop(currentMonthPayments, position);
-            }
-            default:
-                return null;
-        }
+        return switch (type) {
+            case GLOBAL -> getTop(payments, position);
+            case MONTHLY -> getTop(monthlyPayments, position);
+            case CURRENT_MONTH -> getTop(currentMonthPayments, position);
+        };
     }
 
     private TopValue getTop(List<Payment> payments, int position) {
@@ -142,7 +135,7 @@ public class Query {
 
         Optional<Payment> payment = payments.stream().filter(p -> p.getUuid().equals(uuid)).findFirst();
 
-        if (!payment.isPresent()) {
+        if (payment.isEmpty()) {
             buyCraftAPI.getLogger().severe("Payment not found for uuid " + uuid);
             return null;
         }
@@ -192,7 +185,6 @@ public class Query {
 
 
     public boolean isNotNumeric(String num) {
-
         try {
             Integer.parseInt(num);
             return false;
@@ -210,16 +202,11 @@ public class Query {
     }
 
     public String getTopDonorName(Type type) {
-        switch (type) {
-            case GLOBAL:
-                return findTop(payments);
-            case MONTHLY:
-                return findTop(monthlyPayments);
-            case CURRENT_MONTH:
-                return findTop(currentMonthPayments);
-            default:
-                return "N/A";
-        }
+        return switch (type) {
+            case GLOBAL -> findTop(payments);
+            case MONTHLY -> findTop(monthlyPayments);
+            case CURRENT_MONTH -> findTop(currentMonthPayments);
+        };
     }
 
     private String findTop(List<Payment> payments) {
@@ -234,7 +221,7 @@ public class Query {
                 .max(Comparator.comparingDouble(Map.Entry::getValue))
                 .map(Map.Entry::getKey);
 
-        if (!uuidOptional.isPresent()) {
+        if (uuidOptional.isEmpty()) {
             return "N/A";
         }
 
