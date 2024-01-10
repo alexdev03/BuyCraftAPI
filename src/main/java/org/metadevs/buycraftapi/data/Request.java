@@ -52,10 +52,26 @@ public class Request {
 
             final int finalPage = response.get("last_page").getAsInt();
             final long total = response.get("total").getAsLong();
+            final boolean onlyLastMonth = buyCraftAPI.getConfigManager().isLoadOnlyLastMonthPayments();
+
+            System.out.println("onlyLastMonth = " + onlyLastMonth);
+
+            if (onlyLastMonth) {
+                buyCraftAPI.getLogger().info("Loading only last month payments...");
+            }
 
             buyCraftAPI.getLogger().info("Loading " + total + " payments..." + " Pages: " + finalPage);
 
             final List<Payment> totalPayments = new CopyOnWriteArrayList<>(getPayment(response));
+
+            if (onlyLastMonth) {
+                totalPayments.removeIf(p -> p.getDate().isBefore(LocalDateTime.now().minusMonths(1)));
+                if (totalPayments.isEmpty()) {
+                    buyCraftAPI.getLogger().info("Payments are empty");
+                    return totalPayments;
+                }
+            }
+
             buyCraftAPI.getLogger().info("Loaded " + totalPayments.size() + " payments of " + total + ". Page " + 1 + " of " + finalPage);
 
             if (finalPage <= 1) {
@@ -67,6 +83,14 @@ public class Request {
                 List<Payment> payments;
                 try {
                     payments = getPayment(getPaymentsByPage2(i).get(5, TimeUnit.SECONDS));
+
+                    if (onlyLastMonth) {
+                        payments = getAllPaymentsInThisMonth(payments);
+                        if(payments.isEmpty()) {
+                            break;
+                        }
+                    }
+
                     sleep(20);
                     requests++;
                     if (requests >= MAX_REQUESTS - 1) {
@@ -88,6 +112,13 @@ public class Request {
 
             return totalPayments;
         }, buyCraftAPI.getQuery().getExecutorService());
+    }
+
+    private List<Payment> getAllPaymentsInThisMonth(@NotNull List<Payment> payments) {
+        final LocalDateTime month = LocalDateTime.now().minusMonths(1);
+        return payments.stream()
+                .filter(p -> p.getDate().isAfter(month))
+                .toList();
     }
 
     public List<Payment> getPayment(JsonObject jsonObject) {

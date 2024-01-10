@@ -1,17 +1,19 @@
 package org.metadevs.buycraftapi;
 
 import lombok.Getter;
+import me.clip.placeholderapi.PlaceholderAPIPlugin;
+import me.clip.placeholderapi.expansion.Configurable;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.clip.placeholderapi.expansion.Taskable;
-import me.clip.placeholderapi.metrics.bukkit.Metrics;
-import me.clip.placeholderapi.metrics.charts.MultiLineChart;
 import net.milkbowl.vault.Vault;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.metadevs.buycraftapi.config.ConfigManager;
 import org.metadevs.buycraftapi.data.Request;
 import org.metadevs.buycraftapi.payments.Query;
 import org.metadevs.buycraftapi.placeholders.Placeholders;
@@ -20,13 +22,13 @@ import org.metadevs.buycraftapi.providers.Provider;
 import org.metadevs.buycraftapi.providers.TebexProvider;
 import org.metadevs.buycraftapi.tasks.Tasks;
 
-import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 @Getter
-public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
+public class BuyCraftAPI extends PlaceholderExpansion implements Taskable, Configurable {
 
     private Vault vault;
     private Permission perms = null;
@@ -35,6 +37,7 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
     private Query query;
     private Logger logger;
     private Provider provider;
+    private ConfigManager configManager;
 
     private Provider getProvider() {
         if (Bukkit.getPluginManager().isPluginEnabled("BuycraftX")) {
@@ -53,13 +56,9 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
     public boolean canRegister() {
         logger = Logger.getLogger("BuycraftAPI");
         provider = getProvider();
+        configManager = new ConfigManager(this);
 
         final String key = provider.getKey();
-        final JavaPlugin placeholderAPI = (JavaPlugin) Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
-
-        if (placeholderAPI == null) {
-            throw new IllegalStateException("Could not find PlaceholderAPI!");
-        }
 
         if (key == null || key.isEmpty() || key.equals("INVALID")) {
             logger.severe("Server key is not set. Please set it in the BuyCraft/Tebex config.yml");
@@ -76,7 +75,7 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
 
 
     public @NotNull String getIdentifier() {
-        return "buycraftAPI";
+        return "buycraftapi";
     }
 
 
@@ -115,16 +114,9 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
         }
     }
 
-
     @Override
     public void start() {
-        final JavaPlugin placeholderAPI = (JavaPlugin) Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
-
-        if (placeholderAPI == null) {
-            throw new IllegalStateException("Could not find PlaceholderAPI!");
-        }
-
-        new Tasks(this, placeholderAPI);
+        new Tasks(this, getPlaceholderAPI());
 
         request = new Request(provider.getKey(), this);
 
@@ -148,5 +140,10 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
     @Override
     public void stop() {
         query.close();
+    }
+
+    @Override
+    public Map<String, Object> getDefaults() {
+        return configManager.getDefaults();
     }
 }
