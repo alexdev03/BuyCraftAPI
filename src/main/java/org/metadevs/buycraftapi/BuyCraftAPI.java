@@ -4,8 +4,6 @@ import lombok.Getter;
 import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.clip.placeholderapi.expansion.Taskable;
-import me.clip.placeholderapi.metrics.bukkit.Metrics;
-import me.clip.placeholderapi.metrics.charts.MultiLineChart;
 import net.milkbowl.vault.Vault;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
@@ -21,7 +19,6 @@ import org.metadevs.buycraftapi.providers.Provider;
 import org.metadevs.buycraftapi.providers.TebexProvider;
 import org.metadevs.buycraftapi.tasks.Tasks;
 
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
