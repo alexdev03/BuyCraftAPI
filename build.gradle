@@ -47,6 +47,8 @@ shadowJar {
     relocate('org.jetbrains.annotations', 'org.metadevs.buycraftapi.libraries.jetbrains.annotations')
 
     minimize()
+
+    archiveFileName = 'BuyCraftAPI-' + version + '.jar'
 }
 
 jar {
