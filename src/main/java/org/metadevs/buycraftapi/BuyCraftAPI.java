@@ -81,7 +81,12 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
 
 
     public @NotNull String getVersion() {
-        return "4.6";
+        try {
+            return getClass().getPackage().getImplementationVersion();
+        } catch (Exception e) {
+            getLogger().log(Level.SEVERE, "Error while getting version", e);
+        }
+        return "0.0.0";
     }
 
     @Override

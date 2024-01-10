@@ -49,10 +49,24 @@ shadowJar {
     minimize()
 }
 
+jar {
+    manifest {
+        attributes(
+                'Implementation-Title': 'BuyCraftAPI',
+                'Implementation-Version': version,
+                'Implementation-Vendor': 'BuyCraft',
+                'Implementation-Vendor-Id': 'org.metadevs.buycraftapi',
+                'Specification-Title': 'BuyCraftAPI',
+                'Specification-Version': version,
+                'Specification-Vendor': 'BuyCraft',
+                'Main-Class': 'org.metadevs.buycraftapi.BuyCraftAPI'
+        )
+    }
+}
+
 build.dependsOn(shadowJar)
 
 group = 'org.metadevs.buycraftapi'
-version = '4.6'
 description = 'BuyCraftAPI'
 java.sourceCompatibility = JavaVersion.VERSION_17
 
