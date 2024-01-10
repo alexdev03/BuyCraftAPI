@@ -1,6 +1,7 @@
 package org.metadevs.buycraftapi;
 
 import lombok.Getter;
+import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.clip.placeholderapi.expansion.Taskable;
 import me.clip.placeholderapi.metrics.bukkit.Metrics;
@@ -35,6 +36,7 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
     private Query query;
     private Logger logger;
     private Provider provider;
+    private PlaceholderAPIPlugin placeholderAPIPlugin;
 
     private Provider getProvider() {
         if (Bukkit.getPluginManager().isPluginEnabled("BuycraftX")) {
@@ -55,9 +57,9 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
         provider = getProvider();
 
         final String key = provider.getKey();
-        final JavaPlugin placeholderAPI = (JavaPlugin) Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
+        placeholderAPIPlugin = (PlaceholderAPIPlugin) Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
 
-        if (placeholderAPI == null) {
+        if (placeholderAPIPlugin == null) {
             throw new IllegalStateException("Could not find PlaceholderAPI!");
         }
 
@@ -115,7 +117,6 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
         }
     }
 
-
     @Override
     public void start() {
         final JavaPlugin placeholderAPI = (JavaPlugin) Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
@@ -129,16 +130,6 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable {
         request = new Request(provider.getKey(), this);
 
         query = new Query(this);
-
-        int pluginId = 10173;
-        final Metrics metrics = new Metrics(placeholderAPI, pluginId);
-
-        metrics.addCustomChart(new MultiLineChart("players_and_servers", () -> {
-            HashMap<String, Integer> valueMap = new HashMap<>();
-            valueMap.put("servers", 1);
-            valueMap.put("players", Bukkit.getOnlinePlayers().size());
-            return valueMap;
-        }));
 
         vault = (Vault) Bukkit.getServer().getPluginManager().getPlugin("Vault");
         vaultHook();

@@ -47,6 +47,8 @@ shadowJar {
     relocate('org.jetbrains.annotations', 'org.metadevs.buycraftapi.libraries.jetbrains.annotations')
 
     minimize()
+
+    archiveFileName = 'BuyCraftAPI-' + version + '.jar'
 }
 
 jar {
@@ -69,11 +71,3 @@ build.dependsOn(shadowJar)
 group = 'org.metadevs.buycraftapi'
 description = 'BuyCraftAPI'
 java.sourceCompatibility = JavaVersion.VERSION_17
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from(components.java)
-        }
-    }
-}
