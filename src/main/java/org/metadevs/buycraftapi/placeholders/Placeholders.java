@@ -66,7 +66,8 @@ public class Placeholders {
             if (maxPayments == 0) return "Payments could not be found";
 
             if (num > maxPayments - 1 || num < 0)
-                return "Invalid payment number. Put a number from 0 to " + (maxPayments - 1);
+                return "0";
+                //return "Invalid payment number. Put a number from 0 to " + (maxPayments - 1);
 
 
             return query.getRecentPayment(num).getName();
@@ -80,7 +81,8 @@ public class Placeholders {
 
             if (maxPayments == 0) return "Payments could not be found";
             if (num > maxPayments - 1 || num < 0)
-                return "Error, Invalid number! You can put a number from 0 to " + (maxPayments - 1);
+                return "0";
+                //return "Error, Invalid number! You can put a number from 0 to " + (maxPayments - 1);
 
 
             return query.getRecentPayment(num).getCurrency();
@@ -93,7 +95,8 @@ public class Placeholders {
             int num = Integer.parseInt(replace);
             if (maxPayments == 0) return "Payments could not be found";
             if (num > maxPayments - 1 || num < 0)
-                return "Error, Invalid number! You can put a number from 0 to " + (maxPayments - 1);
+                return "0";
+                //return "Error, Invalid number! You can put a number from 0 to " + (maxPayments - 1);
 
             return String.valueOf(Query.round(query.getRecentPayment(num).getAmount(), 2));
         }
@@ -118,7 +121,7 @@ public class Placeholders {
             if (query.isNotNumeric(replace)) return "Error, Invalid number";
             int num = Integer.parseInt(replace);
             TopValue payment = query.getTop(GLOBAL, num);
-            if (payment == null) return "Error";
+            if (payment == null) return "";
             else {
                 return payment.getName();
             }
@@ -129,7 +132,7 @@ public class Placeholders {
             if (query.isNotNumeric(replace)) return "Error, Invalid number";
             int num = Integer.parseInt(replace);
             TopValue payment = query.getTop(MONTHLY, num);
-            if (payment == null) return "Error";
+            if (payment == null) return "0";
             else {
                 return payment.getName();
 
@@ -141,7 +144,7 @@ public class Placeholders {
             if (query.isNotNumeric(replace)) return "Error, Invalid number";
             int num = Integer.parseInt(replace);
             TopValue payment = query.getTop(CURRENT_MONTH, num);
-            if (payment == null) return "Error";
+            if (payment == null) return "0";
             else {
                 return payment.getName();
             }
@@ -221,11 +224,11 @@ public class Placeholders {
         int num = Integer.parseInt(replace);
 
         if(Bukkit.isPrimaryThread()){
-            return "This placeholder is not supported in the main thread";
+            return "This placeholder is not supported on the main thread";
         }
 
         TopValue payment = query.getTop(currentMonth, num);
-        if (payment == null) return "Error";
+        if (payment == null) return "0";
         else {
             OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(payment.getUuid());
             return buyCraftAPI.getPerms().getPrimaryGroup(null, offlinePlayer);

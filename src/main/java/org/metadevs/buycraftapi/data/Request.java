@@ -45,7 +45,7 @@ public class Request {
             long start = System.currentTimeMillis();
 
             try {
-                response = getPaymentsByPage2(1).get(2, TimeUnit.SECONDS);
+                response = getPaymentsByPage2(1).get(5, TimeUnit.SECONDS);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 throw new RuntimeException(e);
             }
@@ -53,8 +53,6 @@ public class Request {
             final int finalPage = response.get("last_page").getAsInt();
             final long total = response.get("total").getAsLong();
             final boolean onlyLastMonth = buyCraftAPI.getConfigManager().isLoadOnlyLastMonthPayments();
-
-            System.out.println("onlyLastMonth = " + onlyLastMonth);
 
             if (onlyLastMonth) {
                 buyCraftAPI.getLogger().info("Loading only last month payments...");

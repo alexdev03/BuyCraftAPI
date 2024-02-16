@@ -1,18 +1,16 @@
 package org.metadevs.buycraftapi;
 
 import lombok.Getter;
-import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.Configurable;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.clip.placeholderapi.expansion.Taskable;
-import net.milkbowl.vault.Vault;
+import me.clip.placeholderapi.metrics.bukkit.Metrics;
+import me.clip.placeholderapi.metrics.charts.MultiLineChart;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.metadevs.buycraftapi.config.ConfigManager;
 import org.metadevs.buycraftapi.data.Request;
 import org.metadevs.buycraftapi.payments.Query;
@@ -22,6 +20,7 @@ import org.metadevs.buycraftapi.providers.Provider;
 import org.metadevs.buycraftapi.providers.TebexProvider;
 import org.metadevs.buycraftapi.tasks.Tasks;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,10 +29,9 @@ import java.util.logging.Logger;
 @Getter
 public class BuyCraftAPI extends PlaceholderExpansion implements Taskable, Configurable {
 
-    private Vault vault;
     private Permission perms = null;
     private Request request;
-    private Placeholders placeholdersIstance;
+    private Placeholders placeholdersManager;
     private Query query;
     private Logger logger;
     private Provider provider;
@@ -90,12 +88,12 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable, Confi
 
     @Override
     public String onPlaceholderRequest(Player p, @NotNull String identifier) {
-        return placeholdersIstance.onPlaceholderRequest(p, identifier);
+        return placeholdersManager.onPlaceholderRequest(p, identifier);
     }
 
 
     private void vaultHook() {
-        if (vault != null) {
+        if (Bukkit.getPluginManager().isPluginEnabled("Vault")) {
             if (setupPermissions()) {
                 getLogger().log(Level.INFO, "Successfully hooked into Vault for BuyCraftAPI v" + getVersion());
             }
@@ -123,7 +121,7 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable, Confi
         query = new Query(this);
 
         int pluginId = 10173;
-        final Metrics metrics = new Metrics(placeholderAPI, pluginId);
+        final Metrics metrics = new Metrics(getPlaceholderAPI(), pluginId);
 
         metrics.addCustomChart(new MultiLineChart("players_and_servers", () -> {
             HashMap<String, Integer> valueMap = new HashMap<>();
@@ -132,9 +130,8 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable, Confi
             return valueMap;
         }));
 
-        vault = (Vault) Bukkit.getServer().getPluginManager().getPlugin("Vault");
         vaultHook();
-        placeholdersIstance = new Placeholders(this);
+        placeholdersManager = new Placeholders(this);
     }
 
     @Override

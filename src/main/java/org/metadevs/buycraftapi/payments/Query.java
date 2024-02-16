@@ -47,7 +47,7 @@ public class Query {
                 return false;
             }
 
-            buyCraftAPI.getPlaceholdersIstance().setMaxPayments(payments.size());
+            buyCraftAPI.getPlaceholdersManager().setMaxPayments(payments.size());
 
             monthlyPayments = new CopyOnWriteArrayList<>();
             currentMonthPayments = new CopyOnWriteArrayList<>();
@@ -108,7 +108,7 @@ public class Query {
         }
 
         if (position > payments.size()) {
-            buyCraftAPI.getLogger().severe("Position " + position + " is bigger than the size of the list " + payments.size());
+//            buyCraftAPI.getLogger().severe("Position " + position + " is bigger than the size of the list " + payments.size());
             return null;
         }
 
