@@ -114,11 +114,10 @@ public class BuyCraftAPI extends PlaceholderExpansion implements Taskable, Confi
 
     @Override
     public void start() {
-        new Tasks(this, getPlaceholderAPI());
-
         request = new Request(provider.getKey(), this);
-
         query = new Query(this);
+        
+        new Tasks(this, getPlaceholderAPI());
 
         int pluginId = 10173;
         final Metrics metrics = new Metrics(getPlaceholderAPI(), pluginId);
