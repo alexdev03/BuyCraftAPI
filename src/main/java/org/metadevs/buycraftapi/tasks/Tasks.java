@@ -1,7 +1,6 @@
 package org.metadevs.buycraftapi.tasks;
 
 import org.metadevs.buycraftapi.BuyCraftAPI;
-import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.Bukkit;
@@ -11,7 +10,6 @@ public class Tasks {
 
     private final BuyCraftAPI buyCraftAPI;
     private final Plugin placeholderapi;
-    private static final boolean IS_FOLIA = checkFolia();
 
     public Tasks(BuyCraftAPI buyCraftAPI, Plugin placeholderapi) {
         this.buyCraftAPI = buyCraftAPI;
@@ -35,6 +33,11 @@ public class Tasks {
             if(!buyCraftAPI.isRegistered()) {
                 return;
             }
+            
+            if (buyCraftAPI.getQuery() == null) {
+                buyCraftAPI.getLogger().warning("Query not initialized yet, skipping payment load");
+                return;
+            }
 
             long start = System.currentTimeMillis();
             buyCraftAPI.getLogger().info("Loading payments...");
@@ -51,7 +54,9 @@ public class Tasks {
             });
         };
 
-        if (IS_FOLIA) {
+        boolean isFolia = checkFolia();
+        
+        if (isFolia) {
             try {
                 Class<?> foliaAsyncScheduler = Class.forName("io.papermc.paper.threadedregions.scheduler.AsyncScheduler");
                 Object asyncScheduler = Bukkit.getServer().getClass().getMethod("getAsyncScheduler").invoke(Bukkit.getServer());
