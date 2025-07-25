@@ -16,15 +16,6 @@ public class Tasks {
         loadAPITask();
     }
 
-    private static boolean isFolia() {
-        try {
-            Class.forName("io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
     public void loadAPITask() {
         buyCraftAPI.getLogger().info("Loading API Tasks...");
         
@@ -53,39 +44,12 @@ public class Tasks {
             });
         };
 
-        if (isFolia()) {
-            scheduleFoliaTask(task);
-        } else {
-            Bukkit.getScheduler().runTaskTimerAsynchronously(placeholderapi, task, 0L, 20L * 60L * 60L);
-        }
-    }
-
-    private void scheduleFoliaTask(Runnable task) {
-        try {
-            Object server = Bukkit.getServer();
-            Object asyncScheduler = server.getClass().getMethod("getAsyncScheduler").invoke(server);
-            java.util.function.Consumer<Object> taskConsumer = scheduledTask -> {
-                if(!buyCraftAPI.isRegistered()) {
-                    try {
-                        scheduledTask.getClass().getMethod("cancel").invoke(scheduledTask);
-                    } catch (Exception e) {
-                        buyCraftAPI.getLogger().warning("Failed to cancel scheduled task: " + e.getMessage());
-                    }
-                    return;
-                }
-                task.run();
-            };
-            asyncScheduler.getClass()
-                .getMethod("runAtFixedRate", Plugin.class, java.util.function.Consumer.class, long.class, long.class, TimeUnit.class)
-                .invoke(asyncScheduler, placeholderapi, taskConsumer, 0L, 1L, TimeUnit.HOURS);
-                
-        } catch (Exception e) {
-            buyCraftAPI.getLogger().severe("Failed to schedule task on Folia, falling back to legacy scheduler: " + e.getMessage());
-            fallbackToLegacyScheduler(task);
-        }
-    }
-
-    private void fallbackToLegacyScheduler(Runnable task) {
-        Bukkit.getScheduler().runTaskTimerAsynchronously(placeholderapi, task, 0L, 20L * 60L * 60L);
+        Bukkit.getAsyncScheduler().runAtFixedRate(placeholderapi, scheduledTask -> {
+            if(!buyCraftAPI.isRegistered()) {
+                scheduledTask.cancel();
+                return;
+            }
+            task.run();
+        }, 0L, 1L, TimeUnit.HOURS);
     }
 }
